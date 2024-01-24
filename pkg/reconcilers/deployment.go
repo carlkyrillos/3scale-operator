@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	k8sappsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -381,4 +382,19 @@ func DeploymentProbesMutator(desired, existing *k8sappsv1.Deployment) (bool, err
 	}
 
 	return updated, nil
+}
+
+// DefaultDeploymentPodSecurityContext returns a default PodSecurityContext to be used by a Deployment's Pods
+func DefaultDeploymentPodSecurityContext() *v1.PodSecurityContext {
+	var fsGroup int64 = 1001030000
+
+	return &v1.PodSecurityContext{
+		FSGroup: &fsGroup,
+		SELinuxOptions: &v1.SELinuxOptions{
+			Level: "s0:c32,c19",
+		},
+		SeccompProfile: &v1.SeccompProfile{
+			Type: v1.SeccompProfileTypeRuntimeDefault,
+		},
+	}
 }

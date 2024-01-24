@@ -104,6 +104,7 @@ func (p *SystemPostgreSQL) Deployment(containerImage string) *k8sappsv1.Deployme
 					Annotations: p.Options.PodTemplateAnnotations,
 				},
 				Spec: v1.PodSpec{
+					SecurityContext:    reconcilers.DefaultDeploymentPodSecurityContext(),
 					Affinity:           p.Options.Affinity,
 					Tolerations:        p.Options.Tolerations,
 					ServiceAccountName: "amp", //TODO make this configurable via flag

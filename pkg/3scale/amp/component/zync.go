@@ -184,6 +184,7 @@ func (zync *Zync) Deployment(containerImage string) *k8sappsv1.Deployment {
 					Annotations: zync.Options.ZyncPodTemplateAnnotations,
 				},
 				Spec: v1.PodSpec{
+					SecurityContext:    reconcilers.DefaultDeploymentPodSecurityContext(),
 					Affinity:           zync.Options.ZyncAffinity,
 					Tolerations:        zync.Options.ZyncTolerations,
 					ServiceAccountName: "amp",
@@ -320,6 +321,7 @@ func (zync *Zync) QueDeployment(containerImage string) *k8sappsv1.Deployment {
 					Annotations: zync.Options.ZyncQuePodTemplateAnnotations,
 				},
 				Spec: v1.PodSpec{
+					SecurityContext:               reconcilers.DefaultDeploymentPodSecurityContext(),
 					Affinity:                      zync.Options.ZyncQueAffinity,
 					Tolerations:                   zync.Options.ZyncQueTolerations,
 					ServiceAccountName:            "zync-que-sa",
@@ -390,6 +392,7 @@ func (zync *Zync) DatabaseDeployment(containerImage string) *k8sappsv1.Deploymen
 					Annotations: zync.Options.ZyncDatabasePodTemplateAnnotations,
 				},
 				Spec: v1.PodSpec{
+					SecurityContext:    reconcilers.DefaultDeploymentPodSecurityContext(),
 					Affinity:           zync.Options.ZyncDatabaseAffinity,
 					Tolerations:        zync.Options.ZyncDatabaseTolerations,
 					RestartPolicy:      v1.RestartPolicyAlways,

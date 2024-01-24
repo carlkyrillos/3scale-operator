@@ -120,6 +120,7 @@ func (apicast *Apicast) StagingDeployment(containerImage string) *k8sappsv1.Depl
 					Annotations: apicast.stagingPodAnnotations(),
 				},
 				Spec: v1.PodSpec{
+					SecurityContext:    reconcilers.DefaultDeploymentPodSecurityContext(),
 					Affinity:           apicast.Options.StagingAffinity,
 					Tolerations:        apicast.Options.StagingTolerations,
 					ServiceAccountName: "amp",
@@ -195,6 +196,7 @@ func (apicast *Apicast) ProductionDeployment(containerImage string) *k8sappsv1.D
 					Annotations: apicast.productionPodAnnotations(),
 				},
 				Spec: v1.PodSpec{
+					SecurityContext:    reconcilers.DefaultDeploymentPodSecurityContext(),
 					Affinity:           apicast.Options.ProductionAffinity,
 					Tolerations:        apicast.Options.ProductionTolerations,
 					ServiceAccountName: "amp",

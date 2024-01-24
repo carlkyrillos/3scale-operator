@@ -93,8 +93,9 @@ func (backend *Backend) WorkerDeployment(containerImage string) *k8sappsv1.Deplo
 					Annotations: backend.Options.WorkerPodTemplateAnnotations,
 				},
 				Spec: v1.PodSpec{
-					Affinity:    backend.Options.WorkerAffinity,
-					Tolerations: backend.Options.WorkerTolerations,
+					SecurityContext: reconcilers.DefaultDeploymentPodSecurityContext(),
+					Affinity:        backend.Options.WorkerAffinity,
+					Tolerations:     backend.Options.WorkerTolerations,
 					InitContainers: []v1.Container{
 						{
 							Name:  "backend-redis-svc",
@@ -176,8 +177,9 @@ func (backend *Backend) CronDeployment(containerImage string) *k8sappsv1.Deploym
 					Annotations: backend.Options.CronPodTemplateAnnotations,
 				},
 				Spec: v1.PodSpec{
-					Affinity:    backend.Options.CronAffinity,
-					Tolerations: backend.Options.CronTolerations,
+					SecurityContext: reconcilers.DefaultDeploymentPodSecurityContext(),
+					Affinity:        backend.Options.CronAffinity,
+					Tolerations:     backend.Options.CronTolerations,
 					InitContainers: []v1.Container{
 						{
 							Name:  "backend-redis-svc",
@@ -253,8 +255,9 @@ func (backend *Backend) ListenerDeployment(containerImage string) *k8sappsv1.Dep
 					Annotations: backend.Options.ListenerPodTemplateAnnotations,
 				},
 				Spec: v1.PodSpec{
-					Affinity:    backend.Options.ListenerAffinity,
-					Tolerations: backend.Options.ListenerTolerations,
+					SecurityContext: reconcilers.DefaultDeploymentPodSecurityContext(),
+					Affinity:        backend.Options.ListenerAffinity,
+					Tolerations:     backend.Options.ListenerTolerations,
 					Containers: []v1.Container{
 						{
 							Name:      BackendListenerName,

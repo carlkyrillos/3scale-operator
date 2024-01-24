@@ -47,6 +47,7 @@ func (m *Memcached) Deployment(containerImage string) *k8sappsv1.Deployment {
 					Annotations: m.Options.PodTemplateAnnotations,
 				},
 				Spec: v1.PodSpec{
+					SecurityContext:    reconcilers.DefaultDeploymentPodSecurityContext(),
 					Affinity:           m.Options.Affinity,
 					Tolerations:        m.Options.Tolerations,
 					ServiceAccountName: "amp", //TODO make this configurable via flag

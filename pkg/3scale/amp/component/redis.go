@@ -92,6 +92,7 @@ func (redis *Redis) buildDeploymentSelector() *metav1.LabelSelector {
 func (redis *Redis) buildPodTemplateSpec() v1.PodTemplateSpec {
 	return v1.PodTemplateSpec{
 		Spec: v1.PodSpec{
+			SecurityContext:           reconcilers.DefaultDeploymentPodSecurityContext(),
 			Affinity:                  redis.Options.BackendRedisAffinity,
 			Tolerations:               redis.Options.BackendRedisTolerations,
 			ServiceAccountName:        "amp", //TODO make this configurable via flag
@@ -439,6 +440,7 @@ func (redis *Redis) SystemDeployment() *k8sappsv1.Deployment {
 					Annotations: redis.Options.SystemRedisPodTemplateAnnotations,
 				},
 				Spec: v1.PodSpec{
+					SecurityContext:    reconcilers.DefaultDeploymentPodSecurityContext(),
 					Affinity:           redis.Options.SystemRedisAffinity,
 					Tolerations:        redis.Options.SystemRedisTolerations,
 					ServiceAccountName: "amp", //TODO make this configurable via flag

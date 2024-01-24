@@ -142,6 +142,7 @@ func (mysql *SystemMysql) Deployment(containerImage string) *k8sappsv1.Deploymen
 					Annotations: mysql.Options.PodTemplateAnnotations,
 				},
 				Spec: v1.PodSpec{
+					SecurityContext:    reconcilers.DefaultDeploymentPodSecurityContext(),
 					Affinity:           mysql.Options.Affinity,
 					Tolerations:        mysql.Options.Tolerations,
 					ServiceAccountName: "amp", //TODO make this configurable via flag

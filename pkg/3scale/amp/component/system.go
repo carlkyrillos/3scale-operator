@@ -582,9 +582,10 @@ func (system *System) AppDeployment(containerImage string) *k8sappsv1.Deployment
 					Annotations: system.Options.AppPodTemplateAnnotations,
 				},
 				Spec: v1.PodSpec{
-					Affinity:    system.Options.AppAffinity,
-					Tolerations: system.Options.AppTolerations,
-					Volumes:     system.appPodVolumes(),
+					SecurityContext: reconcilers.DefaultDeploymentPodSecurityContext(),
+					Affinity:        system.Options.AppAffinity,
+					Tolerations:     system.Options.AppTolerations,
+					Volumes:         system.appPodVolumes(),
 					Containers: []v1.Container{
 						{
 							Name:         SystemAppMasterContainerName,
@@ -762,7 +763,8 @@ func (system *System) AppPreHookJob(containerImage string) *batchv1.Job {
 			Completions: &completions,
 			Template: v1.PodTemplateSpec{
 				Spec: v1.PodSpec{
-					Volumes: system.appPodVolumes(),
+					SecurityContext: reconcilers.DefaultDeploymentPodSecurityContext(),
+					Volumes:         system.appPodVolumes(),
 					Containers: []v1.Container{
 						{
 							Name:            SystemAppPreHookJobName,
@@ -799,7 +801,8 @@ func (system *System) AppPostHookJob(containerImage string) *batchv1.Job {
 			Completions: &completions,
 			Template: v1.PodTemplateSpec{
 				Spec: v1.PodSpec{
-					Volumes: system.appPodVolumes(),
+					SecurityContext: reconcilers.DefaultDeploymentPodSecurityContext(),
+					Volumes:         system.appPodVolumes(),
 					Containers: []v1.Container{
 						{
 							Name:            SystemAppPostHookJobName,
@@ -926,9 +929,10 @@ func (system *System) SidekiqDeployment(containerImage string) *k8sappsv1.Deploy
 					Annotations: system.Options.SideKiqPodTemplateAnnotations,
 				},
 				Spec: v1.PodSpec{
-					Affinity:    system.Options.SidekiqAffinity,
-					Tolerations: system.Options.SidekiqTolerations,
-					Volumes:     system.SidekiqPodVolumes(),
+					SecurityContext: reconcilers.DefaultDeploymentPodSecurityContext(),
+					Affinity:        system.Options.SidekiqAffinity,
+					Tolerations:     system.Options.SidekiqTolerations,
+					Volumes:         system.SidekiqPodVolumes(),
 					InitContainers: []v1.Container{
 						{
 							Name:  "check-svc",

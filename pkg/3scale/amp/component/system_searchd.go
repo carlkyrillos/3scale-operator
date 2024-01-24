@@ -73,6 +73,7 @@ func (s *SystemSearchd) Deployment(containerImage string) *k8sappsv1.Deployment 
 					Annotations: s.Options.PodTemplateAnnotations,
 				},
 				Spec: v1.PodSpec{
+					SecurityContext:    reconcilers.DefaultDeploymentPodSecurityContext(),
 					Affinity:           s.Options.Affinity,
 					Tolerations:        s.Options.Tolerations,
 					ServiceAccountName: "amp",
