@@ -146,17 +146,17 @@ func (r *SystemReconciler) Reconcile() (reconcile.Result, error) {
 	// Used to synchronize rollout of system Deployments
 	systemComponentNotReady := false
 
-	// SystemApp PreHook Job
-	preHookJob := system.AppPreHookJob(ampImages.Options.SystemImage)
-	err = r.ReconcileJob(preHookJob, reconcilers.CreateOnlyMutator)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	// Block reconciling system-app Deployment until PreHook Job has completed
-	if !helper.HasJobCompleted(preHookJob.Name, preHookJob.Namespace, r.Client()) {
-		systemComponentNotReady = true
-	}
+	//// SystemApp PreHook Job
+	//preHookJob := system.AppPreHookJob(ampImages.Options.SystemImage)
+	//err = r.ReconcileJob(preHookJob, reconcilers.CreateOnlyMutator)
+	//if err != nil {
+	//	return reconcile.Result{}, err
+	//}
+	//
+	//// Block reconciling system-app Deployment until PreHook Job has completed
+	//if !helper.HasJobCompleted(preHookJob.Name, preHookJob.Namespace, r.Client()) {
+	//	systemComponentNotReady = true
+	//}
 
 	// SystemApp Deployment
 	systemAppDeploymentMutators := []reconcilers.DMutateFn{
@@ -173,12 +173,12 @@ func (r *SystemReconciler) Reconcile() (reconcile.Result, error) {
 	if r.apiManager.Spec.System.AppSpec.Replicas != nil {
 		systemAppDeploymentMutators = append(systemAppDeploymentMutators, reconcilers.DeploymentReplicasMutator)
 	}
-	if !systemComponentNotReady {
-		err = r.ReconcileDeployment(system.AppDeployment(ampImages.Options.SystemImage), reconcilers.DeploymentMutator(systemAppDeploymentMutators...))
-		if err != nil {
-			return reconcile.Result{}, err
-		}
+	//if !systemComponentNotReady {
+	err = r.ReconcileDeployment(system.AppDeployment(ampImages.Options.SystemImage), reconcilers.DeploymentMutator(systemAppDeploymentMutators...))
+	if err != nil {
+		return reconcile.Result{}, err
 	}
+	//}
 
 	// Block reconciling PostHook Job unless system-app Deployment is ready
 	deployment := &k8sappsv1.Deployment{}

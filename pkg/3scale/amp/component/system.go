@@ -585,6 +585,17 @@ func (system *System) AppDeployment(containerImage string) *k8sappsv1.Deployment
 					Affinity:    system.Options.AppAffinity,
 					Tolerations: system.Options.AppTolerations,
 					Volumes:     system.appPodVolumes(),
+					InitContainers: []v1.Container{
+						{
+							Name:            SystemAppPreHookJobName,
+							Image:           containerImage,
+							Args:            []string{"bash", "-c", "bundle exec rake boot openshift:deploy"},
+							Env:             system.buildSystemAppPreHookEnv(),
+							Resources:       *system.Options.AppMasterContainerResourceRequirements,
+							VolumeMounts:    system.volumesForSystemAppLifecycleHookPods(),
+							ImagePullPolicy: v1.PullIfNotPresent,
+						},
+					},
 					Containers: []v1.Container{
 						{
 							Name:         SystemAppMasterContainerName,
