@@ -1,12 +1,8 @@
 package operator
 
 import (
-	"context"
 	"fmt"
-	"time"
-
 	k8sappsv1 "k8s.io/api/apps/v1"
-	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -143,21 +139,6 @@ func (r *SystemReconciler) Reconcile() (reconcile.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	// Used to synchronize rollout of system Deployments
-	systemComponentNotReady := false
-
-	//// SystemApp PreHook Job
-	//preHookJob := system.AppPreHookJob(ampImages.Options.SystemImage)
-	//err = r.ReconcileJob(preHookJob, reconcilers.CreateOnlyMutator)
-	//if err != nil {
-	//	return reconcile.Result{}, err
-	//}
-	//
-	//// Block reconciling system-app Deployment until PreHook Job has completed
-	//if !helper.HasJobCompleted(preHookJob.Name, preHookJob.Namespace, r.Client()) {
-	//	systemComponentNotReady = true
-	//}
-
 	// SystemApp Deployment
 	systemAppDeploymentMutators := []reconcilers.DMutateFn{
 		reconcilers.DeploymentAffinityMutator,
@@ -173,32 +154,9 @@ func (r *SystemReconciler) Reconcile() (reconcile.Result, error) {
 	if r.apiManager.Spec.System.AppSpec.Replicas != nil {
 		systemAppDeploymentMutators = append(systemAppDeploymentMutators, reconcilers.DeploymentReplicasMutator)
 	}
-	//if !systemComponentNotReady {
 	err = r.ReconcileDeployment(system.AppDeployment(ampImages.Options.SystemImage), reconcilers.DeploymentMutator(systemAppDeploymentMutators...))
 	if err != nil {
 		return reconcile.Result{}, err
-	}
-	//}
-
-	// Block reconciling PostHook Job unless system-app Deployment is ready
-	deployment := &k8sappsv1.Deployment{}
-	err = r.Client().Get(context.TODO(), client.ObjectKey{
-		Namespace: r.apiManager.GetNamespace(),
-		Name:      component.SystemAppDeploymentName,
-	}, deployment)
-	if err != nil && !k8serr.IsNotFound(err) {
-		return reconcile.Result{}, err
-	}
-	if k8serr.IsNotFound(err) || !helper.IsDeploymentAvailable(deployment) {
-		systemComponentNotReady = true
-	}
-
-	// SystemApp PostHook Job
-	if !systemComponentNotReady {
-		err = r.ReconcileJob(system.AppPostHookJob(ampImages.Options.SystemImage), reconcilers.CreateOnlyMutator)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
 	}
 
 	// 3scale 2.14 -> 2.15
@@ -207,7 +165,7 @@ func (r *SystemReconciler) Reconcile() (reconcile.Result, error) {
 		return reconcile.Result{}, err
 	}
 	if !isMigrated {
-		systemComponentNotReady = true
+		return reconcile.Result{Requeue: true}, nil
 	}
 
 	// Sidekiq Deployment
@@ -240,7 +198,7 @@ func (r *SystemReconciler) Reconcile() (reconcile.Result, error) {
 		return reconcile.Result{}, err
 	}
 	if !isMigrated {
-		systemComponentNotReady = true
+		return reconcile.Result{Requeue: true}, nil
 	}
 
 	// SystemApp PDB
@@ -283,11 +241,6 @@ func (r *SystemReconciler) Reconcile() (reconcile.Result, error) {
 	err = r.ReconcilePrometheusRules(system.SystemSidekiqPrometheusRules(), reconcilers.CreateOnlyMutator)
 	if err != nil {
 		return reconcile.Result{}, err
-	}
-
-	// Requeue if any of the system-app Deployment's components aren't ready
-	if systemComponentNotReady {
-		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 
 	return reconcile.Result{}, nil

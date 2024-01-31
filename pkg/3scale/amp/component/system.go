@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strconv"
 
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -598,8 +599,15 @@ func (system *System) AppDeployment(containerImage string) *k8sappsv1.Deployment
 					},
 					Containers: []v1.Container{
 						{
-							Name:         SystemAppMasterContainerName,
-							Image:        containerImage,
+							Name:  SystemAppMasterContainerName,
+							Image: containerImage,
+							Lifecycle: &corev1.Lifecycle{
+								PostStart: &corev1.LifecycleHandler{
+									Exec: &corev1.ExecAction{
+										Command: []string{"bash", "-c", "bundle exec rake boot openshift:post_deploy"},
+									},
+								},
+							},
 							Args:         []string{"env", "TENANT_MODE=master", "PORT=3002", "container-entrypoint", "bundle", "exec", "unicorn", "-c", "config/unicorn.rb"},
 							Ports:        system.appMasterPorts(),
 							Env:          system.buildAppMasterContainerEnv(),
