@@ -3,7 +3,6 @@ package component
 import (
 	"github.com/3scale/3scale-operator/pkg/reconcilers"
 	k8sappsv1 "k8s.io/api/apps/v1"
-	batchv1 "k8s.io/api/batch/v1"
 	"sort"
 	"strconv"
 
@@ -96,8 +95,7 @@ const (
 	SystemSidekiqName              = "system-sidekiq"
 	SystemSideKiqInitContainerName = "check-svc"
 	SystemAppDeploymentName        = "system-app"
-	SystemAppPreHookJobName        = "system-app-pre"
-	SystemAppPostHookJobName       = "system-app-post"
+	SystemAppPreHookName           = "system-app-pre"
 
 	SystemAppMasterContainerName    = "system-master"
 	SystemAppProviderContainerName  = "system-provider"
@@ -588,7 +586,7 @@ func (system *System) AppDeployment(containerImage string) *k8sappsv1.Deployment
 					Volumes:     system.appPodVolumes(),
 					InitContainers: []v1.Container{
 						{
-							Name:            SystemAppPreHookJobName,
+							Name:            SystemAppPreHookName,
 							Image:           containerImage,
 							Args:            []string{"bash", "-c", "bundle exec rake boot openshift:deploy"},
 							Env:             system.buildSystemAppPreHookEnv(),
@@ -759,80 +757,6 @@ func (system *System) AppDeployment(containerImage string) *k8sappsv1.Deployment
 					ServiceAccountName:        "amp",
 					PriorityClassName:         system.Options.AppPriorityClassName,
 					TopologySpreadConstraints: system.Options.AppTopologySpreadConstraints,
-				},
-			},
-		},
-	}
-}
-
-func (system *System) AppPreHookJob(containerImage string) *batchv1.Job {
-	var completions int32 = 1
-
-	return &batchv1.Job{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "batch/v1",
-			Kind:       "Job",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   SystemAppPreHookJobName,
-			Labels: system.Options.CommonAppLabels,
-		},
-		Spec: batchv1.JobSpec{
-			Completions: &completions,
-			Template: v1.PodTemplateSpec{
-				Spec: v1.PodSpec{
-					Volumes: system.appPodVolumes(),
-					Containers: []v1.Container{
-						{
-							Name:            SystemAppPreHookJobName,
-							Image:           containerImage,
-							Args:            []string{"bash", "-c", "bundle exec rake boot openshift:deploy"},
-							Env:             system.buildSystemAppPreHookEnv(),
-							Resources:       *system.Options.AppMasterContainerResourceRequirements,
-							VolumeMounts:    system.volumesForSystemAppLifecycleHookPods(),
-							ImagePullPolicy: v1.PullIfNotPresent,
-						},
-					},
-					RestartPolicy:      v1.RestartPolicyNever,
-					ServiceAccountName: "amp",
-					PriorityClassName:  system.Options.AppPriorityClassName,
-				},
-			},
-		},
-	}
-}
-
-func (system *System) AppPostHookJob(containerImage string) *batchv1.Job {
-	var completions int32 = 1
-
-	return &batchv1.Job{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "batch/v1",
-			Kind:       "Job",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   SystemAppPostHookJobName,
-			Labels: system.Options.CommonAppLabels,
-		},
-		Spec: batchv1.JobSpec{
-			Completions: &completions,
-			Template: v1.PodTemplateSpec{
-				Spec: v1.PodSpec{
-					Volumes: system.appPodVolumes(),
-					Containers: []v1.Container{
-						{
-							Name:            SystemAppPostHookJobName,
-							Image:           containerImage,
-							Args:            []string{"bash", "-c", "bundle exec rake boot openshift:post_deploy"},
-							Env:             system.buildSystemAppPostHookEnv(),
-							Resources:       *system.Options.AppMasterContainerResourceRequirements,
-							VolumeMounts:    system.volumesForSystemAppLifecycleHookPods(),
-							ImagePullPolicy: v1.PullIfNotPresent,
-						},
-					},
-					RestartPolicy:      v1.RestartPolicyNever,
-					ServiceAccountName: "amp",
-					PriorityClassName:  system.Options.AppPriorityClassName,
 				},
 			},
 		},

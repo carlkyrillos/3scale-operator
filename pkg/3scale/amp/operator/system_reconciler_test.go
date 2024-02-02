@@ -15,7 +15,6 @@ import (
 	imagev1 "github.com/openshift/api/image/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,20 +36,9 @@ func TestSystemReconcilerCreate(t *testing.T) {
 	ctx := context.TODO()
 
 	apimanager := basicApimanagerSpecTestSystemOptions()
-	appPreHookJob := &batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{Name: component.SystemAppPreHookJobName, Namespace: apimanager.Namespace},
-		Status: batchv1.JobStatus{
-			Conditions: []batchv1.JobCondition{
-				{
-					Type:   batchv1.JobComplete,
-					Status: v1.ConditionTrue,
-				},
-			},
-		},
-	}
 
 	// Objects to track in the fake client.
-	objs := []runtime.Object{apimanager, appPreHookJob}
+	objs := []runtime.Object{apimanager}
 	s := scheme.Scheme
 	s.AddKnownTypes(appsv1alpha1.GroupVersion, apimanager)
 	err := k8sappsv1.AddToScheme(s)
@@ -147,18 +135,6 @@ func TestReplicaSystemReconciler(t *testing.T) {
 		twoValue   int32 = 2
 	)
 
-	appPreHookJob := &batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{Name: component.SystemAppPreHookJobName, Namespace: namespace},
-		Status: batchv1.JobStatus{
-			Conditions: []batchv1.JobCondition{
-				{
-					Type:   batchv1.JobComplete,
-					Status: v1.ConditionTrue,
-				},
-			},
-		},
-	}
-
 	ctx := context.TODO()
 	s := scheme.Scheme
 
@@ -195,7 +171,7 @@ func TestReplicaSystemReconciler(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.testName, func(subT *testing.T) {
-			objs := []runtime.Object{tc.apimanager, appPreHookJob}
+			objs := []runtime.Object{tc.apimanager}
 			// Create a fake client to mock API calls.
 			cl := fake.NewFakeClient(objs...)
 			clientAPIReader := fake.NewFakeClient(objs...)
