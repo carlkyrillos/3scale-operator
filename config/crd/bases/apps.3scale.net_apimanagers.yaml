@@ -1133,6 +1133,28 @@ spec:
                         description: ResourceRequirements describes the compute resource
                           requirements.
                         properties:
+                          claims:
+                            description: "Claims lists the names of resources, defined
+                              in spec.resourceClaims, that are used by this container.
+                              \n This is an alpha field and requires enabling the
+                              DynamicResourceAllocation feature gate. \n This field
+                              is immutable. It can only be set for containers."
+                            items:
+                              description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                              properties:
+                                name:
+                                  description: Name must match the name of one entry
+                                    in pod.spec.resourceClaims of the Pod where this
+                                    field is used. It makes that resource available
+                                    inside a container.
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                            type: array
+                            x-kubernetes-list-map-keys:
+                            - name
+                            x-kubernetes-list-type: map
                           limits:
                             additionalProperties:
                               anyOf:
@@ -1154,7 +1176,7 @@ spec:
                               compute resources required. If Requests is omitted for
                               a container, it defaults to Limits if that is explicitly
                               specified, otherwise to an implementation-defined value.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                              Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                             type: object
                         type: object
                       serviceCacheSize:
@@ -1258,6 +1280,24 @@ spec:
                                   type: object
                               type: object
                               x-kubernetes-map-type: atomic
+                            matchLabelKeys:
+                              description: "MatchLabelKeys is a set of pod label keys
+                                to select the pods over which spreading will be calculated.
+                                The keys are used to lookup values from the incoming
+                                pod labels, those key-value labels are ANDed with
+                                labelSelector to select the group of existing pods
+                                over which spreading will be calculated for the incoming
+                                pod. The same key is forbidden to exist in both MatchLabelKeys
+                                and LabelSelector. MatchLabelKeys cannot be set when
+                                LabelSelector isn't set. Keys that don't exist in
+                                the incoming pod labels will be ignored. A null or
+                                empty list means only match against labelSelector.
+                                \n This is a beta field and requires the MatchLabelKeysInPodTopologySpread
+                                feature gate to be enabled (enabled by default)."
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
                             maxSkew:
                               description: 'MaxSkew describes the degree to which
                                 pods may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
@@ -1303,10 +1343,34 @@ spec:
                                 new pod with the same labelSelector cannot be scheduled,
                                 because computed skew will be 3(3 - 0) if new Pod
                                 is scheduled to any of the three zones, it will violate
-                                MaxSkew. \n This is an alpha field and requires enabling
-                                MinDomainsInPodTopologySpread feature gate."
+                                MaxSkew. \n This is a beta field and requires the
+                                MinDomainsInPodTopologySpread feature gate to be enabled
+                                (enabled by default)."
                               format: int32
                               type: integer
+                            nodeAffinityPolicy:
+                              description: "NodeAffinityPolicy indicates how we will
+                                treat Pod's nodeAffinity/nodeSelector when calculating
+                                pod topology spread skew. Options are: - Honor: only
+                                nodes matching nodeAffinity/nodeSelector are included
+                                in the calculations. - Ignore: nodeAffinity/nodeSelector
+                                are ignored. All nodes are included in the calculations.
+                                \n If this value is nil, the behavior is equivalent
+                                to the Honor policy. This is a beta-level feature
+                                default enabled by the NodeInclusionPolicyInPodTopologySpread
+                                feature flag."
+                              type: string
+                            nodeTaintsPolicy:
+                              description: "NodeTaintsPolicy indicates how we will
+                                treat node taints when calculating pod topology spread
+                                skew. Options are: - Honor: nodes without taints,
+                                along with tainted nodes for which the incoming pod
+                                has a toleration, are included. - Ignore: node taints
+                                are ignored. All nodes are included. \n If this value
+                                is nil, the behavior is equivalent to the Ignore policy.
+                                This is a beta-level feature default enabled by the
+                                NodeInclusionPolicyInPodTopologySpread feature flag."
+                              type: string
                             topologyKey:
                               description: TopologyKey is the key of node labels.
                                 Nodes that have a label with this key and identical
@@ -1315,11 +1379,11 @@ spec:
                                 to put balanced number of pods into each bucket. We
                                 define a domain as a particular instance of a topology.
                                 Also, we define an eligible domain as a domain whose
-                                nodes match the node selector. e.g. If TopologyKey
-                                is "kubernetes.io/hostname", each Node is a domain
-                                of that topology. And, if TopologyKey is "topology.kubernetes.io/zone",
-                                each zone is a domain of that topology. It's a required
-                                field.
+                                nodes meet the requirements of nodeAffinityPolicy
+                                and nodeTaintsPolicy. e.g. If TopologyKey is "kubernetes.io/hostname",
+                                each Node is a domain of that topology. And, if TopologyKey
+                                is "topology.kubernetes.io/zone", each zone is a domain
+                                of that topology. It's a required field.
                               type: string
                             whenUnsatisfiable:
                               description: 'WhenUnsatisfiable indicates how to deal
@@ -2445,6 +2509,28 @@ spec:
                         description: ResourceRequirements describes the compute resource
                           requirements.
                         properties:
+                          claims:
+                            description: "Claims lists the names of resources, defined
+                              in spec.resourceClaims, that are used by this container.
+                              \n This is an alpha field and requires enabling the
+                              DynamicResourceAllocation feature gate. \n This field
+                              is immutable. It can only be set for containers."
+                            items:
+                              description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                              properties:
+                                name:
+                                  description: Name must match the name of one entry
+                                    in pod.spec.resourceClaims of the Pod where this
+                                    field is used. It makes that resource available
+                                    inside a container.
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                            type: array
+                            x-kubernetes-list-map-keys:
+                            - name
+                            x-kubernetes-list-type: map
                           limits:
                             additionalProperties:
                               anyOf:
@@ -2466,7 +2552,7 @@ spec:
                               compute resources required. If Requests is omitted for
                               a container, it defaults to Limits if that is explicitly
                               specified, otherwise to an implementation-defined value.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                              Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                             type: object
                         type: object
                       serviceCacheSize:
@@ -2570,6 +2656,24 @@ spec:
                                   type: object
                               type: object
                               x-kubernetes-map-type: atomic
+                            matchLabelKeys:
+                              description: "MatchLabelKeys is a set of pod label keys
+                                to select the pods over which spreading will be calculated.
+                                The keys are used to lookup values from the incoming
+                                pod labels, those key-value labels are ANDed with
+                                labelSelector to select the group of existing pods
+                                over which spreading will be calculated for the incoming
+                                pod. The same key is forbidden to exist in both MatchLabelKeys
+                                and LabelSelector. MatchLabelKeys cannot be set when
+                                LabelSelector isn't set. Keys that don't exist in
+                                the incoming pod labels will be ignored. A null or
+                                empty list means only match against labelSelector.
+                                \n This is a beta field and requires the MatchLabelKeysInPodTopologySpread
+                                feature gate to be enabled (enabled by default)."
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
                             maxSkew:
                               description: 'MaxSkew describes the degree to which
                                 pods may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
@@ -2615,10 +2719,34 @@ spec:
                                 new pod with the same labelSelector cannot be scheduled,
                                 because computed skew will be 3(3 - 0) if new Pod
                                 is scheduled to any of the three zones, it will violate
-                                MaxSkew. \n This is an alpha field and requires enabling
-                                MinDomainsInPodTopologySpread feature gate."
+                                MaxSkew. \n This is a beta field and requires the
+                                MinDomainsInPodTopologySpread feature gate to be enabled
+                                (enabled by default)."
                               format: int32
                               type: integer
+                            nodeAffinityPolicy:
+                              description: "NodeAffinityPolicy indicates how we will
+                                treat Pod's nodeAffinity/nodeSelector when calculating
+                                pod topology spread skew. Options are: - Honor: only
+                                nodes matching nodeAffinity/nodeSelector are included
+                                in the calculations. - Ignore: nodeAffinity/nodeSelector
+                                are ignored. All nodes are included in the calculations.
+                                \n If this value is nil, the behavior is equivalent
+                                to the Honor policy. This is a beta-level feature
+                                default enabled by the NodeInclusionPolicyInPodTopologySpread
+                                feature flag."
+                              type: string
+                            nodeTaintsPolicy:
+                              description: "NodeTaintsPolicy indicates how we will
+                                treat node taints when calculating pod topology spread
+                                skew. Options are: - Honor: nodes without taints,
+                                along with tainted nodes for which the incoming pod
+                                has a toleration, are included. - Ignore: node taints
+                                are ignored. All nodes are included. \n If this value
+                                is nil, the behavior is equivalent to the Ignore policy.
+                                This is a beta-level feature default enabled by the
+                                NodeInclusionPolicyInPodTopologySpread feature flag."
+                              type: string
                             topologyKey:
                               description: TopologyKey is the key of node labels.
                                 Nodes that have a label with this key and identical
@@ -2627,11 +2755,11 @@ spec:
                                 to put balanced number of pods into each bucket. We
                                 define a domain as a particular instance of a topology.
                                 Also, we define an eligible domain as a domain whose
-                                nodes match the node selector. e.g. If TopologyKey
-                                is "kubernetes.io/hostname", each Node is a domain
-                                of that topology. And, if TopologyKey is "topology.kubernetes.io/zone",
-                                each zone is a domain of that topology. It's a required
-                                field.
+                                nodes meet the requirements of nodeAffinityPolicy
+                                and nodeTaintsPolicy. e.g. If TopologyKey is "kubernetes.io/hostname",
+                                each Node is a domain of that topology. And, if TopologyKey
+                                is "topology.kubernetes.io/zone", each zone is a domain
+                                of that topology. It's a required field.
                               type: string
                             whenUnsatisfiable:
                               description: 'WhenUnsatisfiable indicates how to deal
@@ -3586,6 +3714,28 @@ spec:
                         description: ResourceRequirements describes the compute resource
                           requirements.
                         properties:
+                          claims:
+                            description: "Claims lists the names of resources, defined
+                              in spec.resourceClaims, that are used by this container.
+                              \n This is an alpha field and requires enabling the
+                              DynamicResourceAllocation feature gate. \n This field
+                              is immutable. It can only be set for containers."
+                            items:
+                              description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                              properties:
+                                name:
+                                  description: Name must match the name of one entry
+                                    in pod.spec.resourceClaims of the Pod where this
+                                    field is used. It makes that resource available
+                                    inside a container.
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                            type: array
+                            x-kubernetes-list-map-keys:
+                            - name
+                            x-kubernetes-list-type: map
                           limits:
                             additionalProperties:
                               anyOf:
@@ -3607,7 +3757,7 @@ spec:
                               compute resources required. If Requests is omitted for
                               a container, it defaults to Limits if that is explicitly
                               specified, otherwise to an implementation-defined value.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                              Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                             type: object
                         type: object
                       tolerations:
@@ -3706,6 +3856,24 @@ spec:
                                   type: object
                               type: object
                               x-kubernetes-map-type: atomic
+                            matchLabelKeys:
+                              description: "MatchLabelKeys is a set of pod label keys
+                                to select the pods over which spreading will be calculated.
+                                The keys are used to lookup values from the incoming
+                                pod labels, those key-value labels are ANDed with
+                                labelSelector to select the group of existing pods
+                                over which spreading will be calculated for the incoming
+                                pod. The same key is forbidden to exist in both MatchLabelKeys
+                                and LabelSelector. MatchLabelKeys cannot be set when
+                                LabelSelector isn't set. Keys that don't exist in
+                                the incoming pod labels will be ignored. A null or
+                                empty list means only match against labelSelector.
+                                \n This is a beta field and requires the MatchLabelKeysInPodTopologySpread
+                                feature gate to be enabled (enabled by default)."
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
                             maxSkew:
                               description: 'MaxSkew describes the degree to which
                                 pods may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
@@ -3751,10 +3919,34 @@ spec:
                                 new pod with the same labelSelector cannot be scheduled,
                                 because computed skew will be 3(3 - 0) if new Pod
                                 is scheduled to any of the three zones, it will violate
-                                MaxSkew. \n This is an alpha field and requires enabling
-                                MinDomainsInPodTopologySpread feature gate."
+                                MaxSkew. \n This is a beta field and requires the
+                                MinDomainsInPodTopologySpread feature gate to be enabled
+                                (enabled by default)."
                               format: int32
                               type: integer
+                            nodeAffinityPolicy:
+                              description: "NodeAffinityPolicy indicates how we will
+                                treat Pod's nodeAffinity/nodeSelector when calculating
+                                pod topology spread skew. Options are: - Honor: only
+                                nodes matching nodeAffinity/nodeSelector are included
+                                in the calculations. - Ignore: nodeAffinity/nodeSelector
+                                are ignored. All nodes are included in the calculations.
+                                \n If this value is nil, the behavior is equivalent
+                                to the Honor policy. This is a beta-level feature
+                                default enabled by the NodeInclusionPolicyInPodTopologySpread
+                                feature flag."
+                              type: string
+                            nodeTaintsPolicy:
+                              description: "NodeTaintsPolicy indicates how we will
+                                treat node taints when calculating pod topology spread
+                                skew. Options are: - Honor: nodes without taints,
+                                along with tainted nodes for which the incoming pod
+                                has a toleration, are included. - Ignore: node taints
+                                are ignored. All nodes are included. \n If this value
+                                is nil, the behavior is equivalent to the Ignore policy.
+                                This is a beta-level feature default enabled by the
+                                NodeInclusionPolicyInPodTopologySpread feature flag."
+                              type: string
                             topologyKey:
                               description: TopologyKey is the key of node labels.
                                 Nodes that have a label with this key and identical
@@ -3763,11 +3955,11 @@ spec:
                                 to put balanced number of pods into each bucket. We
                                 define a domain as a particular instance of a topology.
                                 Also, we define an eligible domain as a domain whose
-                                nodes match the node selector. e.g. If TopologyKey
-                                is "kubernetes.io/hostname", each Node is a domain
-                                of that topology. And, if TopologyKey is "topology.kubernetes.io/zone",
-                                each zone is a domain of that topology. It's a required
-                                field.
+                                nodes meet the requirements of nodeAffinityPolicy
+                                and nodeTaintsPolicy. e.g. If TopologyKey is "kubernetes.io/hostname",
+                                each Node is a domain of that topology. And, if TopologyKey
+                                is "topology.kubernetes.io/zone", each zone is a domain
+                                of that topology. It's a required field.
                               type: string
                             whenUnsatisfiable:
                               description: 'WhenUnsatisfiable indicates how to deal
@@ -4719,6 +4911,28 @@ spec:
                         description: ResourceRequirements describes the compute resource
                           requirements.
                         properties:
+                          claims:
+                            description: "Claims lists the names of resources, defined
+                              in spec.resourceClaims, that are used by this container.
+                              \n This is an alpha field and requires enabling the
+                              DynamicResourceAllocation feature gate. \n This field
+                              is immutable. It can only be set for containers."
+                            items:
+                              description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                              properties:
+                                name:
+                                  description: Name must match the name of one entry
+                                    in pod.spec.resourceClaims of the Pod where this
+                                    field is used. It makes that resource available
+                                    inside a container.
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                            type: array
+                            x-kubernetes-list-map-keys:
+                            - name
+                            x-kubernetes-list-type: map
                           limits:
                             additionalProperties:
                               anyOf:
@@ -4740,7 +4954,7 @@ spec:
                               compute resources required. If Requests is omitted for
                               a container, it defaults to Limits if that is explicitly
                               specified, otherwise to an implementation-defined value.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                              Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                             type: object
                         type: object
                       tolerations:
@@ -4839,6 +5053,24 @@ spec:
                                   type: object
                               type: object
                               x-kubernetes-map-type: atomic
+                            matchLabelKeys:
+                              description: "MatchLabelKeys is a set of pod label keys
+                                to select the pods over which spreading will be calculated.
+                                The keys are used to lookup values from the incoming
+                                pod labels, those key-value labels are ANDed with
+                                labelSelector to select the group of existing pods
+                                over which spreading will be calculated for the incoming
+                                pod. The same key is forbidden to exist in both MatchLabelKeys
+                                and LabelSelector. MatchLabelKeys cannot be set when
+                                LabelSelector isn't set. Keys that don't exist in
+                                the incoming pod labels will be ignored. A null or
+                                empty list means only match against labelSelector.
+                                \n This is a beta field and requires the MatchLabelKeysInPodTopologySpread
+                                feature gate to be enabled (enabled by default)."
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
                             maxSkew:
                               description: 'MaxSkew describes the degree to which
                                 pods may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
@@ -4884,10 +5116,34 @@ spec:
                                 new pod with the same labelSelector cannot be scheduled,
                                 because computed skew will be 3(3 - 0) if new Pod
                                 is scheduled to any of the three zones, it will violate
-                                MaxSkew. \n This is an alpha field and requires enabling
-                                MinDomainsInPodTopologySpread feature gate."
+                                MaxSkew. \n This is a beta field and requires the
+                                MinDomainsInPodTopologySpread feature gate to be enabled
+                                (enabled by default)."
                               format: int32
                               type: integer
+                            nodeAffinityPolicy:
+                              description: "NodeAffinityPolicy indicates how we will
+                                treat Pod's nodeAffinity/nodeSelector when calculating
+                                pod topology spread skew. Options are: - Honor: only
+                                nodes matching nodeAffinity/nodeSelector are included
+                                in the calculations. - Ignore: nodeAffinity/nodeSelector
+                                are ignored. All nodes are included in the calculations.
+                                \n If this value is nil, the behavior is equivalent
+                                to the Honor policy. This is a beta-level feature
+                                default enabled by the NodeInclusionPolicyInPodTopologySpread
+                                feature flag."
+                              type: string
+                            nodeTaintsPolicy:
+                              description: "NodeTaintsPolicy indicates how we will
+                                treat node taints when calculating pod topology spread
+                                skew. Options are: - Honor: nodes without taints,
+                                along with tainted nodes for which the incoming pod
+                                has a toleration, are included. - Ignore: node taints
+                                are ignored. All nodes are included. \n If this value
+                                is nil, the behavior is equivalent to the Ignore policy.
+                                This is a beta-level feature default enabled by the
+                                NodeInclusionPolicyInPodTopologySpread feature flag."
+                              type: string
                             topologyKey:
                               description: TopologyKey is the key of node labels.
                                 Nodes that have a label with this key and identical
@@ -4896,11 +5152,11 @@ spec:
                                 to put balanced number of pods into each bucket. We
                                 define a domain as a particular instance of a topology.
                                 Also, we define an eligible domain as a domain whose
-                                nodes match the node selector. e.g. If TopologyKey
-                                is "kubernetes.io/hostname", each Node is a domain
-                                of that topology. And, if TopologyKey is "topology.kubernetes.io/zone",
-                                each zone is a domain of that topology. It's a required
-                                field.
+                                nodes meet the requirements of nodeAffinityPolicy
+                                and nodeTaintsPolicy. e.g. If TopologyKey is "kubernetes.io/hostname",
+                                each Node is a domain of that topology. And, if TopologyKey
+                                is "topology.kubernetes.io/zone", each zone is a domain
+                                of that topology. It's a required field.
                               type: string
                             whenUnsatisfiable:
                               description: 'WhenUnsatisfiable indicates how to deal
@@ -5818,6 +6074,28 @@ spec:
                     description: ResourceRequirements describes the compute resource
                       requirements.
                     properties:
+                      claims:
+                        description: "Claims lists the names of resources, defined
+                          in spec.resourceClaims, that are used by this container.
+                          \n This is an alpha field and requires enabling the DynamicResourceAllocation
+                          feature gate. \n This field is immutable. It can only be
+                          set for containers."
+                        items:
+                          description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                          properties:
+                            name:
+                              description: Name must match the name of one entry in
+                                pod.spec.resourceClaims of the Pod where this field
+                                is used. It makes that resource available inside a
+                                container.
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type: array
+                        x-kubernetes-list-map-keys:
+                        - name
+                        x-kubernetes-list-type: map
                       limits:
                         additionalProperties:
                           anyOf:
@@ -5838,7 +6116,8 @@ spec:
                         description: 'Requests describes the minimum amount of compute
                           resources required. If Requests is omitted for a container,
                           it defaults to Limits if that is explicitly specified, otherwise
-                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                          to an implementation-defined value. Requests cannot exceed
+                          Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
                   redisTolerations:
@@ -5934,6 +6213,24 @@ spec:
                               type: object
                           type: object
                           x-kubernetes-map-type: atomic
+                        matchLabelKeys:
+                          description: "MatchLabelKeys is a set of pod label keys
+                            to select the pods over which spreading will be calculated.
+                            The keys are used to lookup values from the incoming pod
+                            labels, those key-value labels are ANDed with labelSelector
+                            to select the group of existing pods over which spreading
+                            will be calculated for the incoming pod. The same key
+                            is forbidden to exist in both MatchLabelKeys and LabelSelector.
+                            MatchLabelKeys cannot be set when LabelSelector isn't
+                            set. Keys that don't exist in the incoming pod labels
+                            will be ignored. A null or empty list means only match
+                            against labelSelector. \n This is a beta field and requires
+                            the MatchLabelKeysInPodTopologySpread feature gate to
+                            be enabled (enabled by default)."
+                          items:
+                            type: string
+                          type: array
+                          x-kubernetes-list-type: atomic
                         maxSkew:
                           description: 'MaxSkew describes the degree to which pods
                             may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
@@ -5976,11 +6273,33 @@ spec:
                             as 0. In this situation, new pod with the same labelSelector
                             cannot be scheduled, because computed skew will be 3(3
                             - 0) if new Pod is scheduled to any of the three zones,
-                            it will violate MaxSkew. \n This is an alpha field and
-                            requires enabling MinDomainsInPodTopologySpread feature
-                            gate."
+                            it will violate MaxSkew. \n This is a beta field and requires
+                            the MinDomainsInPodTopologySpread feature gate to be enabled
+                            (enabled by default)."
                           format: int32
                           type: integer
+                        nodeAffinityPolicy:
+                          description: "NodeAffinityPolicy indicates how we will treat
+                            Pod's nodeAffinity/nodeSelector when calculating pod topology
+                            spread skew. Options are: - Honor: only nodes matching
+                            nodeAffinity/nodeSelector are included in the calculations.
+                            - Ignore: nodeAffinity/nodeSelector are ignored. All nodes
+                            are included in the calculations. \n If this value is
+                            nil, the behavior is equivalent to the Honor policy. This
+                            is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread
+                            feature flag."
+                          type: string
+                        nodeTaintsPolicy:
+                          description: "NodeTaintsPolicy indicates how we will treat
+                            node taints when calculating pod topology spread skew.
+                            Options are: - Honor: nodes without taints, along with
+                            tainted nodes for which the incoming pod has a toleration,
+                            are included. - Ignore: node taints are ignored. All nodes
+                            are included. \n If this value is nil, the behavior is
+                            equivalent to the Ignore policy. This is a beta-level
+                            feature default enabled by the NodeInclusionPolicyInPodTopologySpread
+                            feature flag."
+                          type: string
                         topologyKey:
                           description: TopologyKey is the key of node labels. Nodes
                             that have a label with this key and identical values are
@@ -5988,11 +6307,11 @@ spec:
                             <key, value> as a "bucket", and try to put balanced number
                             of pods into each bucket. We define a domain as a particular
                             instance of a topology. Also, we define an eligible domain
-                            as a domain whose nodes match the node selector. e.g.
-                            If TopologyKey is "kubernetes.io/hostname", each Node
-                            is a domain of that topology. And, if TopologyKey is "topology.kubernetes.io/zone",
-                            each zone is a domain of that topology. It's a required
-                            field.
+                            as a domain whose nodes meet the requirements of nodeAffinityPolicy
+                            and nodeTaintsPolicy. e.g. If TopologyKey is "kubernetes.io/hostname",
+                            each Node is a domain of that topology. And, if TopologyKey
+                            is "topology.kubernetes.io/zone", each zone is a domain
+                            of that topology. It's a required field.
                           type: string
                         whenUnsatisfiable:
                           description: 'WhenUnsatisfiable indicates how to deal with
@@ -6940,6 +7259,28 @@ spec:
                         description: ResourceRequirements describes the compute resource
                           requirements.
                         properties:
+                          claims:
+                            description: "Claims lists the names of resources, defined
+                              in spec.resourceClaims, that are used by this container.
+                              \n This is an alpha field and requires enabling the
+                              DynamicResourceAllocation feature gate. \n This field
+                              is immutable. It can only be set for containers."
+                            items:
+                              description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                              properties:
+                                name:
+                                  description: Name must match the name of one entry
+                                    in pod.spec.resourceClaims of the Pod where this
+                                    field is used. It makes that resource available
+                                    inside a container.
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                            type: array
+                            x-kubernetes-list-map-keys:
+                            - name
+                            x-kubernetes-list-type: map
                           limits:
                             additionalProperties:
                               anyOf:
@@ -6961,7 +7302,7 @@ spec:
                               compute resources required. If Requests is omitted for
                               a container, it defaults to Limits if that is explicitly
                               specified, otherwise to an implementation-defined value.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                              Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                             type: object
                         type: object
                       tolerations:
@@ -7060,6 +7401,24 @@ spec:
                                   type: object
                               type: object
                               x-kubernetes-map-type: atomic
+                            matchLabelKeys:
+                              description: "MatchLabelKeys is a set of pod label keys
+                                to select the pods over which spreading will be calculated.
+                                The keys are used to lookup values from the incoming
+                                pod labels, those key-value labels are ANDed with
+                                labelSelector to select the group of existing pods
+                                over which spreading will be calculated for the incoming
+                                pod. The same key is forbidden to exist in both MatchLabelKeys
+                                and LabelSelector. MatchLabelKeys cannot be set when
+                                LabelSelector isn't set. Keys that don't exist in
+                                the incoming pod labels will be ignored. A null or
+                                empty list means only match against labelSelector.
+                                \n This is a beta field and requires the MatchLabelKeysInPodTopologySpread
+                                feature gate to be enabled (enabled by default)."
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
                             maxSkew:
                               description: 'MaxSkew describes the degree to which
                                 pods may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
@@ -7105,10 +7464,34 @@ spec:
                                 new pod with the same labelSelector cannot be scheduled,
                                 because computed skew will be 3(3 - 0) if new Pod
                                 is scheduled to any of the three zones, it will violate
-                                MaxSkew. \n This is an alpha field and requires enabling
-                                MinDomainsInPodTopologySpread feature gate."
+                                MaxSkew. \n This is a beta field and requires the
+                                MinDomainsInPodTopologySpread feature gate to be enabled
+                                (enabled by default)."
                               format: int32
                               type: integer
+                            nodeAffinityPolicy:
+                              description: "NodeAffinityPolicy indicates how we will
+                                treat Pod's nodeAffinity/nodeSelector when calculating
+                                pod topology spread skew. Options are: - Honor: only
+                                nodes matching nodeAffinity/nodeSelector are included
+                                in the calculations. - Ignore: nodeAffinity/nodeSelector
+                                are ignored. All nodes are included in the calculations.
+                                \n If this value is nil, the behavior is equivalent
+                                to the Honor policy. This is a beta-level feature
+                                default enabled by the NodeInclusionPolicyInPodTopologySpread
+                                feature flag."
+                              type: string
+                            nodeTaintsPolicy:
+                              description: "NodeTaintsPolicy indicates how we will
+                                treat node taints when calculating pod topology spread
+                                skew. Options are: - Honor: nodes without taints,
+                                along with tainted nodes for which the incoming pod
+                                has a toleration, are included. - Ignore: node taints
+                                are ignored. All nodes are included. \n If this value
+                                is nil, the behavior is equivalent to the Ignore policy.
+                                This is a beta-level feature default enabled by the
+                                NodeInclusionPolicyInPodTopologySpread feature flag."
+                              type: string
                             topologyKey:
                               description: TopologyKey is the key of node labels.
                                 Nodes that have a label with this key and identical
@@ -7117,11 +7500,11 @@ spec:
                                 to put balanced number of pods into each bucket. We
                                 define a domain as a particular instance of a topology.
                                 Also, we define an eligible domain as a domain whose
-                                nodes match the node selector. e.g. If TopologyKey
-                                is "kubernetes.io/hostname", each Node is a domain
-                                of that topology. And, if TopologyKey is "topology.kubernetes.io/zone",
-                                each zone is a domain of that topology. It's a required
-                                field.
+                                nodes meet the requirements of nodeAffinityPolicy
+                                and nodeTaintsPolicy. e.g. If TopologyKey is "kubernetes.io/hostname",
+                                each Node is a domain of that topology. And, if TopologyKey
+                                is "topology.kubernetes.io/zone", each zone is a domain
+                                of that topology. It's a required field.
                               type: string
                             whenUnsatisfiable:
                               description: 'WhenUnsatisfiable indicates how to deal
@@ -8120,6 +8503,28 @@ spec:
                         description: ResourceRequirements describes the compute resource
                           requirements.
                         properties:
+                          claims:
+                            description: "Claims lists the names of resources, defined
+                              in spec.resourceClaims, that are used by this container.
+                              \n This is an alpha field and requires enabling the
+                              DynamicResourceAllocation feature gate. \n This field
+                              is immutable. It can only be set for containers."
+                            items:
+                              description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                              properties:
+                                name:
+                                  description: Name must match the name of one entry
+                                    in pod.spec.resourceClaims of the Pod where this
+                                    field is used. It makes that resource available
+                                    inside a container.
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                            type: array
+                            x-kubernetes-list-map-keys:
+                            - name
+                            x-kubernetes-list-type: map
                           limits:
                             additionalProperties:
                               anyOf:
@@ -8141,7 +8546,7 @@ spec:
                               compute resources required. If Requests is omitted for
                               a container, it defaults to Limits if that is explicitly
                               specified, otherwise to an implementation-defined value.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                              Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                             type: object
                         type: object
                       labels:
@@ -8152,6 +8557,28 @@ spec:
                         description: ResourceRequirements describes the compute resource
                           requirements.
                         properties:
+                          claims:
+                            description: "Claims lists the names of resources, defined
+                              in spec.resourceClaims, that are used by this container.
+                              \n This is an alpha field and requires enabling the
+                              DynamicResourceAllocation feature gate. \n This field
+                              is immutable. It can only be set for containers."
+                            items:
+                              description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                              properties:
+                                name:
+                                  description: Name must match the name of one entry
+                                    in pod.spec.resourceClaims of the Pod where this
+                                    field is used. It makes that resource available
+                                    inside a container.
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                            type: array
+                            x-kubernetes-list-map-keys:
+                            - name
+                            x-kubernetes-list-type: map
                           limits:
                             additionalProperties:
                               anyOf:
@@ -8173,7 +8600,7 @@ spec:
                               compute resources required. If Requests is omitted for
                               a container, it defaults to Limits if that is explicitly
                               specified, otherwise to an implementation-defined value.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                              Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                             type: object
                         type: object
                       priorityClassName:
@@ -8182,6 +8609,28 @@ spec:
                         description: ResourceRequirements describes the compute resource
                           requirements.
                         properties:
+                          claims:
+                            description: "Claims lists the names of resources, defined
+                              in spec.resourceClaims, that are used by this container.
+                              \n This is an alpha field and requires enabling the
+                              DynamicResourceAllocation feature gate. \n This field
+                              is immutable. It can only be set for containers."
+                            items:
+                              description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                              properties:
+                                name:
+                                  description: Name must match the name of one entry
+                                    in pod.spec.resourceClaims of the Pod where this
+                                    field is used. It makes that resource available
+                                    inside a container.
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                            type: array
+                            x-kubernetes-list-map-keys:
+                            - name
+                            x-kubernetes-list-type: map
                           limits:
                             additionalProperties:
                               anyOf:
@@ -8203,7 +8652,7 @@ spec:
                               compute resources required. If Requests is omitted for
                               a container, it defaults to Limits if that is explicitly
                               specified, otherwise to an implementation-defined value.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                              Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                             type: object
                         type: object
                       replicas:
@@ -8305,6 +8754,24 @@ spec:
                                   type: object
                               type: object
                               x-kubernetes-map-type: atomic
+                            matchLabelKeys:
+                              description: "MatchLabelKeys is a set of pod label keys
+                                to select the pods over which spreading will be calculated.
+                                The keys are used to lookup values from the incoming
+                                pod labels, those key-value labels are ANDed with
+                                labelSelector to select the group of existing pods
+                                over which spreading will be calculated for the incoming
+                                pod. The same key is forbidden to exist in both MatchLabelKeys
+                                and LabelSelector. MatchLabelKeys cannot be set when
+                                LabelSelector isn't set. Keys that don't exist in
+                                the incoming pod labels will be ignored. A null or
+                                empty list means only match against labelSelector.
+                                \n This is a beta field and requires the MatchLabelKeysInPodTopologySpread
+                                feature gate to be enabled (enabled by default)."
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
                             maxSkew:
                               description: 'MaxSkew describes the degree to which
                                 pods may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
@@ -8350,10 +8817,34 @@ spec:
                                 new pod with the same labelSelector cannot be scheduled,
                                 because computed skew will be 3(3 - 0) if new Pod
                                 is scheduled to any of the three zones, it will violate
-                                MaxSkew. \n This is an alpha field and requires enabling
-                                MinDomainsInPodTopologySpread feature gate."
+                                MaxSkew. \n This is a beta field and requires the
+                                MinDomainsInPodTopologySpread feature gate to be enabled
+                                (enabled by default)."
                               format: int32
                               type: integer
+                            nodeAffinityPolicy:
+                              description: "NodeAffinityPolicy indicates how we will
+                                treat Pod's nodeAffinity/nodeSelector when calculating
+                                pod topology spread skew. Options are: - Honor: only
+                                nodes matching nodeAffinity/nodeSelector are included
+                                in the calculations. - Ignore: nodeAffinity/nodeSelector
+                                are ignored. All nodes are included in the calculations.
+                                \n If this value is nil, the behavior is equivalent
+                                to the Honor policy. This is a beta-level feature
+                                default enabled by the NodeInclusionPolicyInPodTopologySpread
+                                feature flag."
+                              type: string
+                            nodeTaintsPolicy:
+                              description: "NodeTaintsPolicy indicates how we will
+                                treat node taints when calculating pod topology spread
+                                skew. Options are: - Honor: nodes without taints,
+                                along with tainted nodes for which the incoming pod
+                                has a toleration, are included. - Ignore: node taints
+                                are ignored. All nodes are included. \n If this value
+                                is nil, the behavior is equivalent to the Ignore policy.
+                                This is a beta-level feature default enabled by the
+                                NodeInclusionPolicyInPodTopologySpread feature flag."
+                              type: string
                             topologyKey:
                               description: TopologyKey is the key of node labels.
                                 Nodes that have a label with this key and identical
@@ -8362,11 +8853,11 @@ spec:
                                 to put balanced number of pods into each bucket. We
                                 define a domain as a particular instance of a topology.
                                 Also, we define an eligible domain as a domain whose
-                                nodes match the node selector. e.g. If TopologyKey
-                                is "kubernetes.io/hostname", each Node is a domain
-                                of that topology. And, if TopologyKey is "topology.kubernetes.io/zone",
-                                each zone is a domain of that topology. It's a required
-                                field.
+                                nodes meet the requirements of nodeAffinityPolicy
+                                and nodeTaintsPolicy. e.g. If TopologyKey is "kubernetes.io/hostname",
+                                each Node is a domain of that topology. And, if TopologyKey
+                                is "topology.kubernetes.io/zone", each zone is a domain
+                                of that topology. It's a required field.
                               type: string
                             whenUnsatisfiable:
                               description: 'WhenUnsatisfiable indicates how to deal
@@ -9405,6 +9896,30 @@ spec:
                             description: ResourceRequirements describes the compute
                               resource requirements.
                             properties:
+                              claims:
+                                description: "Claims lists the names of resources,
+                                  defined in spec.resourceClaims, that are used by
+                                  this container. \n This is an alpha field and requires
+                                  enabling the DynamicResourceAllocation feature gate.
+                                  \n This field is immutable. It can only be set for
+                                  containers."
+                                items:
+                                  description: ResourceClaim references one entry
+                                    in PodSpec.ResourceClaims.
+                                  properties:
+                                    name:
+                                      description: Name must match the name of one
+                                        entry in pod.spec.resourceClaims of the Pod
+                                        where this field is used. It makes that resource
+                                        available inside a container.
+                                      type: string
+                                  required:
+                                  - name
+                                  type: object
+                                type: array
+                                x-kubernetes-list-map-keys:
+                                - name
+                                x-kubernetes-list-type: map
                               limits:
                                 additionalProperties:
                                   anyOf:
@@ -9426,7 +9941,8 @@ spec:
                                   of compute resources required. If Requests is omitted
                                   for a container, it defaults to Limits if that is
                                   explicitly specified, otherwise to an implementation-defined
-                                  value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                  value. Requests cannot exceed Limits. More info:
+                                  https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                 type: object
                             type: object
                           tolerations:
@@ -9531,6 +10047,26 @@ spec:
                                       type: object
                                   type: object
                                   x-kubernetes-map-type: atomic
+                                matchLabelKeys:
+                                  description: "MatchLabelKeys is a set of pod label
+                                    keys to select the pods over which spreading will
+                                    be calculated. The keys are used to lookup values
+                                    from the incoming pod labels, those key-value
+                                    labels are ANDed with labelSelector to select
+                                    the group of existing pods over which spreading
+                                    will be calculated for the incoming pod. The same
+                                    key is forbidden to exist in both MatchLabelKeys
+                                    and LabelSelector. MatchLabelKeys cannot be set
+                                    when LabelSelector isn't set. Keys that don't
+                                    exist in the incoming pod labels will be ignored.
+                                    A null or empty list means only match against
+                                    labelSelector. \n This is a beta field and requires
+                                    the MatchLabelKeysInPodTopologySpread feature
+                                    gate to be enabled (enabled by default)."
+                                  items:
+                                    type: string
+                                  type: array
+                                  x-kubernetes-list-type: atomic
                                 maxSkew:
                                   description: 'MaxSkew describes the degree to which
                                     pods may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
@@ -9579,11 +10115,35 @@ spec:
                                     new pod with the same labelSelector cannot be
                                     scheduled, because computed skew will be 3(3 -
                                     0) if new Pod is scheduled to any of the three
-                                    zones, it will violate MaxSkew. \n This is an
-                                    alpha field and requires enabling MinDomainsInPodTopologySpread
-                                    feature gate."
+                                    zones, it will violate MaxSkew. \n This is a beta
+                                    field and requires the MinDomainsInPodTopologySpread
+                                    feature gate to be enabled (enabled by default)."
                                   format: int32
                                   type: integer
+                                nodeAffinityPolicy:
+                                  description: "NodeAffinityPolicy indicates how we
+                                    will treat Pod's nodeAffinity/nodeSelector when
+                                    calculating pod topology spread skew. Options
+                                    are: - Honor: only nodes matching nodeAffinity/nodeSelector
+                                    are included in the calculations. - Ignore: nodeAffinity/nodeSelector
+                                    are ignored. All nodes are included in the calculations.
+                                    \n If this value is nil, the behavior is equivalent
+                                    to the Honor policy. This is a beta-level feature
+                                    default enabled by the NodeInclusionPolicyInPodTopologySpread
+                                    feature flag."
+                                  type: string
+                                nodeTaintsPolicy:
+                                  description: "NodeTaintsPolicy indicates how we
+                                    will treat node taints when calculating pod topology
+                                    spread skew. Options are: - Honor: nodes without
+                                    taints, along with tainted nodes for which the
+                                    incoming pod has a toleration, are included. -
+                                    Ignore: node taints are ignored. All nodes are
+                                    included. \n If this value is nil, the behavior
+                                    is equivalent to the Ignore policy. This is a
+                                    beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread
+                                    feature flag."
+                                  type: string
                                 topologyKey:
                                   description: TopologyKey is the key of node labels.
                                     Nodes that have a label with this key and identical
@@ -9592,12 +10152,12 @@ spec:
                                     try to put balanced number of pods into each bucket.
                                     We define a domain as a particular instance of
                                     a topology. Also, we define an eligible domain
-                                    as a domain whose nodes match the node selector.
-                                    e.g. If TopologyKey is "kubernetes.io/hostname",
-                                    each Node is a domain of that topology. And, if
-                                    TopologyKey is "topology.kubernetes.io/zone",
-                                    each zone is a domain of that topology. It's a
-                                    required field.
+                                    as a domain whose nodes meet the requirements
+                                    of nodeAffinityPolicy and nodeTaintsPolicy. e.g.
+                                    If TopologyKey is "kubernetes.io/hostname", each
+                                    Node is a domain of that topology. And, if TopologyKey
+                                    is "topology.kubernetes.io/zone", each zone is
+                                    a domain of that topology. It's a required field.
                                   type: string
                                 whenUnsatisfiable:
                                   description: 'WhenUnsatisfiable indicates how to
@@ -10634,6 +11194,30 @@ spec:
                             description: ResourceRequirements describes the compute
                               resource requirements.
                             properties:
+                              claims:
+                                description: "Claims lists the names of resources,
+                                  defined in spec.resourceClaims, that are used by
+                                  this container. \n This is an alpha field and requires
+                                  enabling the DynamicResourceAllocation feature gate.
+                                  \n This field is immutable. It can only be set for
+                                  containers."
+                                items:
+                                  description: ResourceClaim references one entry
+                                    in PodSpec.ResourceClaims.
+                                  properties:
+                                    name:
+                                      description: Name must match the name of one
+                                        entry in pod.spec.resourceClaims of the Pod
+                                        where this field is used. It makes that resource
+                                        available inside a container.
+                                      type: string
+                                  required:
+                                  - name
+                                  type: object
+                                type: array
+                                x-kubernetes-list-map-keys:
+                                - name
+                                x-kubernetes-list-type: map
                               limits:
                                 additionalProperties:
                                   anyOf:
@@ -10655,7 +11239,8 @@ spec:
                                   of compute resources required. If Requests is omitted
                                   for a container, it defaults to Limits if that is
                                   explicitly specified, otherwise to an implementation-defined
-                                  value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                  value. Requests cannot exceed Limits. More info:
+                                  https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                 type: object
                             type: object
                           tolerations:
@@ -10760,6 +11345,26 @@ spec:
                                       type: object
                                   type: object
                                   x-kubernetes-map-type: atomic
+                                matchLabelKeys:
+                                  description: "MatchLabelKeys is a set of pod label
+                                    keys to select the pods over which spreading will
+                                    be calculated. The keys are used to lookup values
+                                    from the incoming pod labels, those key-value
+                                    labels are ANDed with labelSelector to select
+                                    the group of existing pods over which spreading
+                                    will be calculated for the incoming pod. The same
+                                    key is forbidden to exist in both MatchLabelKeys
+                                    and LabelSelector. MatchLabelKeys cannot be set
+                                    when LabelSelector isn't set. Keys that don't
+                                    exist in the incoming pod labels will be ignored.
+                                    A null or empty list means only match against
+                                    labelSelector. \n This is a beta field and requires
+                                    the MatchLabelKeysInPodTopologySpread feature
+                                    gate to be enabled (enabled by default)."
+                                  items:
+                                    type: string
+                                  type: array
+                                  x-kubernetes-list-type: atomic
                                 maxSkew:
                                   description: 'MaxSkew describes the degree to which
                                     pods may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
@@ -10808,11 +11413,35 @@ spec:
                                     new pod with the same labelSelector cannot be
                                     scheduled, because computed skew will be 3(3 -
                                     0) if new Pod is scheduled to any of the three
-                                    zones, it will violate MaxSkew. \n This is an
-                                    alpha field and requires enabling MinDomainsInPodTopologySpread
-                                    feature gate."
+                                    zones, it will violate MaxSkew. \n This is a beta
+                                    field and requires the MinDomainsInPodTopologySpread
+                                    feature gate to be enabled (enabled by default)."
                                   format: int32
                                   type: integer
+                                nodeAffinityPolicy:
+                                  description: "NodeAffinityPolicy indicates how we
+                                    will treat Pod's nodeAffinity/nodeSelector when
+                                    calculating pod topology spread skew. Options
+                                    are: - Honor: only nodes matching nodeAffinity/nodeSelector
+                                    are included in the calculations. - Ignore: nodeAffinity/nodeSelector
+                                    are ignored. All nodes are included in the calculations.
+                                    \n If this value is nil, the behavior is equivalent
+                                    to the Honor policy. This is a beta-level feature
+                                    default enabled by the NodeInclusionPolicyInPodTopologySpread
+                                    feature flag."
+                                  type: string
+                                nodeTaintsPolicy:
+                                  description: "NodeTaintsPolicy indicates how we
+                                    will treat node taints when calculating pod topology
+                                    spread skew. Options are: - Honor: nodes without
+                                    taints, along with tainted nodes for which the
+                                    incoming pod has a toleration, are included. -
+                                    Ignore: node taints are ignored. All nodes are
+                                    included. \n If this value is nil, the behavior
+                                    is equivalent to the Ignore policy. This is a
+                                    beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread
+                                    feature flag."
+                                  type: string
                                 topologyKey:
                                   description: TopologyKey is the key of node labels.
                                     Nodes that have a label with this key and identical
@@ -10821,12 +11450,12 @@ spec:
                                     try to put balanced number of pods into each bucket.
                                     We define a domain as a particular instance of
                                     a topology. Also, we define an eligible domain
-                                    as a domain whose nodes match the node selector.
-                                    e.g. If TopologyKey is "kubernetes.io/hostname",
-                                    each Node is a domain of that topology. And, if
-                                    TopologyKey is "topology.kubernetes.io/zone",
-                                    each zone is a domain of that topology. It's a
-                                    required field.
+                                    as a domain whose nodes meet the requirements
+                                    of nodeAffinityPolicy and nodeTaintsPolicy. e.g.
+                                    If TopologyKey is "kubernetes.io/hostname", each
+                                    Node is a domain of that topology. And, if TopologyKey
+                                    is "topology.kubernetes.io/zone", each zone is
+                                    a domain of that topology. It's a required field.
                                   type: string
                                 whenUnsatisfiable:
                                   description: 'WhenUnsatisfiable indicates how to
@@ -11825,6 +12454,28 @@ spec:
                     description: ResourceRequirements describes the compute resource
                       requirements.
                     properties:
+                      claims:
+                        description: "Claims lists the names of resources, defined
+                          in spec.resourceClaims, that are used by this container.
+                          \n This is an alpha field and requires enabling the DynamicResourceAllocation
+                          feature gate. \n This field is immutable. It can only be
+                          set for containers."
+                        items:
+                          description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                          properties:
+                            name:
+                              description: Name must match the name of one entry in
+                                pod.spec.resourceClaims of the Pod where this field
+                                is used. It makes that resource available inside a
+                                container.
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type: array
+                        x-kubernetes-list-map-keys:
+                        - name
+                        x-kubernetes-list-type: map
                       limits:
                         additionalProperties:
                           anyOf:
@@ -11845,7 +12496,8 @@ spec:
                         description: 'Requests describes the minimum amount of compute
                           resources required. If Requests is omitted for a container,
                           it defaults to Limits if that is explicitly specified, otherwise
-                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                          to an implementation-defined value. Requests cannot exceed
+                          Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
                   memcachedTolerations:
@@ -11941,6 +12593,24 @@ spec:
                               type: object
                           type: object
                           x-kubernetes-map-type: atomic
+                        matchLabelKeys:
+                          description: "MatchLabelKeys is a set of pod label keys
+                            to select the pods over which spreading will be calculated.
+                            The keys are used to lookup values from the incoming pod
+                            labels, those key-value labels are ANDed with labelSelector
+                            to select the group of existing pods over which spreading
+                            will be calculated for the incoming pod. The same key
+                            is forbidden to exist in both MatchLabelKeys and LabelSelector.
+                            MatchLabelKeys cannot be set when LabelSelector isn't
+                            set. Keys that don't exist in the incoming pod labels
+                            will be ignored. A null or empty list means only match
+                            against labelSelector. \n This is a beta field and requires
+                            the MatchLabelKeysInPodTopologySpread feature gate to
+                            be enabled (enabled by default)."
+                          items:
+                            type: string
+                          type: array
+                          x-kubernetes-list-type: atomic
                         maxSkew:
                           description: 'MaxSkew describes the degree to which pods
                             may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
@@ -11983,11 +12653,33 @@ spec:
                             as 0. In this situation, new pod with the same labelSelector
                             cannot be scheduled, because computed skew will be 3(3
                             - 0) if new Pod is scheduled to any of the three zones,
-                            it will violate MaxSkew. \n This is an alpha field and
-                            requires enabling MinDomainsInPodTopologySpread feature
-                            gate."
+                            it will violate MaxSkew. \n This is a beta field and requires
+                            the MinDomainsInPodTopologySpread feature gate to be enabled
+                            (enabled by default)."
                           format: int32
                           type: integer
+                        nodeAffinityPolicy:
+                          description: "NodeAffinityPolicy indicates how we will treat
+                            Pod's nodeAffinity/nodeSelector when calculating pod topology
+                            spread skew. Options are: - Honor: only nodes matching
+                            nodeAffinity/nodeSelector are included in the calculations.
+                            - Ignore: nodeAffinity/nodeSelector are ignored. All nodes
+                            are included in the calculations. \n If this value is
+                            nil, the behavior is equivalent to the Honor policy. This
+                            is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread
+                            feature flag."
+                          type: string
+                        nodeTaintsPolicy:
+                          description: "NodeTaintsPolicy indicates how we will treat
+                            node taints when calculating pod topology spread skew.
+                            Options are: - Honor: nodes without taints, along with
+                            tainted nodes for which the incoming pod has a toleration,
+                            are included. - Ignore: node taints are ignored. All nodes
+                            are included. \n If this value is nil, the behavior is
+                            equivalent to the Ignore policy. This is a beta-level
+                            feature default enabled by the NodeInclusionPolicyInPodTopologySpread
+                            feature flag."
+                          type: string
                         topologyKey:
                           description: TopologyKey is the key of node labels. Nodes
                             that have a label with this key and identical values are
@@ -11995,11 +12687,11 @@ spec:
                             <key, value> as a "bucket", and try to put balanced number
                             of pods into each bucket. We define a domain as a particular
                             instance of a topology. Also, we define an eligible domain
-                            as a domain whose nodes match the node selector. e.g.
-                            If TopologyKey is "kubernetes.io/hostname", each Node
-                            is a domain of that topology. And, if TopologyKey is "topology.kubernetes.io/zone",
-                            each zone is a domain of that topology. It's a required
-                            field.
+                            as a domain whose nodes meet the requirements of nodeAffinityPolicy
+                            and nodeTaintsPolicy. e.g. If TopologyKey is "kubernetes.io/hostname",
+                            each Node is a domain of that topology. And, if TopologyKey
+                            is "topology.kubernetes.io/zone", each zone is a domain
+                            of that topology. It's a required field.
                           type: string
                         whenUnsatisfiable:
                           description: 'WhenUnsatisfiable indicates how to deal with
@@ -12915,6 +13607,28 @@ spec:
                     description: ResourceRequirements describes the compute resource
                       requirements.
                     properties:
+                      claims:
+                        description: "Claims lists the names of resources, defined
+                          in spec.resourceClaims, that are used by this container.
+                          \n This is an alpha field and requires enabling the DynamicResourceAllocation
+                          feature gate. \n This field is immutable. It can only be
+                          set for containers."
+                        items:
+                          description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                          properties:
+                            name:
+                              description: Name must match the name of one entry in
+                                pod.spec.resourceClaims of the Pod where this field
+                                is used. It makes that resource available inside a
+                                container.
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type: array
+                        x-kubernetes-list-map-keys:
+                        - name
+                        x-kubernetes-list-type: map
                       limits:
                         additionalProperties:
                           anyOf:
@@ -12935,7 +13649,8 @@ spec:
                         description: 'Requests describes the minimum amount of compute
                           resources required. If Requests is omitted for a container,
                           it defaults to Limits if that is explicitly specified, otherwise
-                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                          to an implementation-defined value. Requests cannot exceed
+                          Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
                   redisTolerations:
@@ -13031,6 +13746,24 @@ spec:
                               type: object
                           type: object
                           x-kubernetes-map-type: atomic
+                        matchLabelKeys:
+                          description: "MatchLabelKeys is a set of pod label keys
+                            to select the pods over which spreading will be calculated.
+                            The keys are used to lookup values from the incoming pod
+                            labels, those key-value labels are ANDed with labelSelector
+                            to select the group of existing pods over which spreading
+                            will be calculated for the incoming pod. The same key
+                            is forbidden to exist in both MatchLabelKeys and LabelSelector.
+                            MatchLabelKeys cannot be set when LabelSelector isn't
+                            set. Keys that don't exist in the incoming pod labels
+                            will be ignored. A null or empty list means only match
+                            against labelSelector. \n This is a beta field and requires
+                            the MatchLabelKeysInPodTopologySpread feature gate to
+                            be enabled (enabled by default)."
+                          items:
+                            type: string
+                          type: array
+                          x-kubernetes-list-type: atomic
                         maxSkew:
                           description: 'MaxSkew describes the degree to which pods
                             may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
@@ -13073,11 +13806,33 @@ spec:
                             as 0. In this situation, new pod with the same labelSelector
                             cannot be scheduled, because computed skew will be 3(3
                             - 0) if new Pod is scheduled to any of the three zones,
-                            it will violate MaxSkew. \n This is an alpha field and
-                            requires enabling MinDomainsInPodTopologySpread feature
-                            gate."
+                            it will violate MaxSkew. \n This is a beta field and requires
+                            the MinDomainsInPodTopologySpread feature gate to be enabled
+                            (enabled by default)."
                           format: int32
                           type: integer
+                        nodeAffinityPolicy:
+                          description: "NodeAffinityPolicy indicates how we will treat
+                            Pod's nodeAffinity/nodeSelector when calculating pod topology
+                            spread skew. Options are: - Honor: only nodes matching
+                            nodeAffinity/nodeSelector are included in the calculations.
+                            - Ignore: nodeAffinity/nodeSelector are ignored. All nodes
+                            are included in the calculations. \n If this value is
+                            nil, the behavior is equivalent to the Honor policy. This
+                            is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread
+                            feature flag."
+                          type: string
+                        nodeTaintsPolicy:
+                          description: "NodeTaintsPolicy indicates how we will treat
+                            node taints when calculating pod topology spread skew.
+                            Options are: - Honor: nodes without taints, along with
+                            tainted nodes for which the incoming pod has a toleration,
+                            are included. - Ignore: node taints are ignored. All nodes
+                            are included. \n If this value is nil, the behavior is
+                            equivalent to the Ignore policy. This is a beta-level
+                            feature default enabled by the NodeInclusionPolicyInPodTopologySpread
+                            feature flag."
+                          type: string
                         topologyKey:
                           description: TopologyKey is the key of node labels. Nodes
                             that have a label with this key and identical values are
@@ -13085,11 +13840,11 @@ spec:
                             <key, value> as a "bucket", and try to put balanced number
                             of pods into each bucket. We define a domain as a particular
                             instance of a topology. Also, we define an eligible domain
-                            as a domain whose nodes match the node selector. e.g.
-                            If TopologyKey is "kubernetes.io/hostname", each Node
-                            is a domain of that topology. And, if TopologyKey is "topology.kubernetes.io/zone",
-                            each zone is a domain of that topology. It's a required
-                            field.
+                            as a domain whose nodes meet the requirements of nodeAffinityPolicy
+                            and nodeTaintsPolicy. e.g. If TopologyKey is "kubernetes.io/hostname",
+                            each Node is a domain of that topology. And, if TopologyKey
+                            is "topology.kubernetes.io/zone", each zone is a domain
+                            of that topology. It's a required field.
                           type: string
                         whenUnsatisfiable:
                           description: 'WhenUnsatisfiable indicates how to deal with
@@ -14062,6 +14817,28 @@ spec:
                         description: ResourceRequirements describes the compute resource
                           requirements.
                         properties:
+                          claims:
+                            description: "Claims lists the names of resources, defined
+                              in spec.resourceClaims, that are used by this container.
+                              \n This is an alpha field and requires enabling the
+                              DynamicResourceAllocation feature gate. \n This field
+                              is immutable. It can only be set for containers."
+                            items:
+                              description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                              properties:
+                                name:
+                                  description: Name must match the name of one entry
+                                    in pod.spec.resourceClaims of the Pod where this
+                                    field is used. It makes that resource available
+                                    inside a container.
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                            type: array
+                            x-kubernetes-list-map-keys:
+                            - name
+                            x-kubernetes-list-type: map
                           limits:
                             additionalProperties:
                               anyOf:
@@ -14083,7 +14860,7 @@ spec:
                               compute resources required. If Requests is omitted for
                               a container, it defaults to Limits if that is explicitly
                               specified, otherwise to an implementation-defined value.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                              Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                             type: object
                         type: object
                       tolerations:
@@ -14182,6 +14959,24 @@ spec:
                                   type: object
                               type: object
                               x-kubernetes-map-type: atomic
+                            matchLabelKeys:
+                              description: "MatchLabelKeys is a set of pod label keys
+                                to select the pods over which spreading will be calculated.
+                                The keys are used to lookup values from the incoming
+                                pod labels, those key-value labels are ANDed with
+                                labelSelector to select the group of existing pods
+                                over which spreading will be calculated for the incoming
+                                pod. The same key is forbidden to exist in both MatchLabelKeys
+                                and LabelSelector. MatchLabelKeys cannot be set when
+                                LabelSelector isn't set. Keys that don't exist in
+                                the incoming pod labels will be ignored. A null or
+                                empty list means only match against labelSelector.
+                                \n This is a beta field and requires the MatchLabelKeysInPodTopologySpread
+                                feature gate to be enabled (enabled by default)."
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
                             maxSkew:
                               description: 'MaxSkew describes the degree to which
                                 pods may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
@@ -14227,10 +15022,34 @@ spec:
                                 new pod with the same labelSelector cannot be scheduled,
                                 because computed skew will be 3(3 - 0) if new Pod
                                 is scheduled to any of the three zones, it will violate
-                                MaxSkew. \n This is an alpha field and requires enabling
-                                MinDomainsInPodTopologySpread feature gate."
+                                MaxSkew. \n This is a beta field and requires the
+                                MinDomainsInPodTopologySpread feature gate to be enabled
+                                (enabled by default)."
                               format: int32
                               type: integer
+                            nodeAffinityPolicy:
+                              description: "NodeAffinityPolicy indicates how we will
+                                treat Pod's nodeAffinity/nodeSelector when calculating
+                                pod topology spread skew. Options are: - Honor: only
+                                nodes matching nodeAffinity/nodeSelector are included
+                                in the calculations. - Ignore: nodeAffinity/nodeSelector
+                                are ignored. All nodes are included in the calculations.
+                                \n If this value is nil, the behavior is equivalent
+                                to the Honor policy. This is a beta-level feature
+                                default enabled by the NodeInclusionPolicyInPodTopologySpread
+                                feature flag."
+                              type: string
+                            nodeTaintsPolicy:
+                              description: "NodeTaintsPolicy indicates how we will
+                                treat node taints when calculating pod topology spread
+                                skew. Options are: - Honor: nodes without taints,
+                                along with tainted nodes for which the incoming pod
+                                has a toleration, are included. - Ignore: node taints
+                                are ignored. All nodes are included. \n If this value
+                                is nil, the behavior is equivalent to the Ignore policy.
+                                This is a beta-level feature default enabled by the
+                                NodeInclusionPolicyInPodTopologySpread feature flag."
+                              type: string
                             topologyKey:
                               description: TopologyKey is the key of node labels.
                                 Nodes that have a label with this key and identical
@@ -14239,11 +15058,11 @@ spec:
                                 to put balanced number of pods into each bucket. We
                                 define a domain as a particular instance of a topology.
                                 Also, we define an eligible domain as a domain whose
-                                nodes match the node selector. e.g. If TopologyKey
-                                is "kubernetes.io/hostname", each Node is a domain
-                                of that topology. And, if TopologyKey is "topology.kubernetes.io/zone",
-                                each zone is a domain of that topology. It's a required
-                                field.
+                                nodes meet the requirements of nodeAffinityPolicy
+                                and nodeTaintsPolicy. e.g. If TopologyKey is "kubernetes.io/hostname",
+                                each Node is a domain of that topology. And, if TopologyKey
+                                is "topology.kubernetes.io/zone", each zone is a domain
+                                of that topology. It's a required field.
                               type: string
                             whenUnsatisfiable:
                               description: 'WhenUnsatisfiable indicates how to deal
@@ -15193,6 +16012,28 @@ spec:
                         description: ResourceRequirements describes the compute resource
                           requirements.
                         properties:
+                          claims:
+                            description: "Claims lists the names of resources, defined
+                              in spec.resourceClaims, that are used by this container.
+                              \n This is an alpha field and requires enabling the
+                              DynamicResourceAllocation feature gate. \n This field
+                              is immutable. It can only be set for containers."
+                            items:
+                              description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                              properties:
+                                name:
+                                  description: Name must match the name of one entry
+                                    in pod.spec.resourceClaims of the Pod where this
+                                    field is used. It makes that resource available
+                                    inside a container.
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                            type: array
+                            x-kubernetes-list-map-keys:
+                            - name
+                            x-kubernetes-list-type: map
                           limits:
                             additionalProperties:
                               anyOf:
@@ -15214,7 +16055,7 @@ spec:
                               compute resources required. If Requests is omitted for
                               a container, it defaults to Limits if that is explicitly
                               specified, otherwise to an implementation-defined value.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                              Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                             type: object
                         type: object
                       tolerations:
@@ -15313,6 +16154,24 @@ spec:
                                   type: object
                               type: object
                               x-kubernetes-map-type: atomic
+                            matchLabelKeys:
+                              description: "MatchLabelKeys is a set of pod label keys
+                                to select the pods over which spreading will be calculated.
+                                The keys are used to lookup values from the incoming
+                                pod labels, those key-value labels are ANDed with
+                                labelSelector to select the group of existing pods
+                                over which spreading will be calculated for the incoming
+                                pod. The same key is forbidden to exist in both MatchLabelKeys
+                                and LabelSelector. MatchLabelKeys cannot be set when
+                                LabelSelector isn't set. Keys that don't exist in
+                                the incoming pod labels will be ignored. A null or
+                                empty list means only match against labelSelector.
+                                \n This is a beta field and requires the MatchLabelKeysInPodTopologySpread
+                                feature gate to be enabled (enabled by default)."
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
                             maxSkew:
                               description: 'MaxSkew describes the degree to which
                                 pods may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
@@ -15358,10 +16217,34 @@ spec:
                                 new pod with the same labelSelector cannot be scheduled,
                                 because computed skew will be 3(3 - 0) if new Pod
                                 is scheduled to any of the three zones, it will violate
-                                MaxSkew. \n This is an alpha field and requires enabling
-                                MinDomainsInPodTopologySpread feature gate."
+                                MaxSkew. \n This is a beta field and requires the
+                                MinDomainsInPodTopologySpread feature gate to be enabled
+                                (enabled by default)."
                               format: int32
                               type: integer
+                            nodeAffinityPolicy:
+                              description: "NodeAffinityPolicy indicates how we will
+                                treat Pod's nodeAffinity/nodeSelector when calculating
+                                pod topology spread skew. Options are: - Honor: only
+                                nodes matching nodeAffinity/nodeSelector are included
+                                in the calculations. - Ignore: nodeAffinity/nodeSelector
+                                are ignored. All nodes are included in the calculations.
+                                \n If this value is nil, the behavior is equivalent
+                                to the Honor policy. This is a beta-level feature
+                                default enabled by the NodeInclusionPolicyInPodTopologySpread
+                                feature flag."
+                              type: string
+                            nodeTaintsPolicy:
+                              description: "NodeTaintsPolicy indicates how we will
+                                treat node taints when calculating pod topology spread
+                                skew. Options are: - Honor: nodes without taints,
+                                along with tainted nodes for which the incoming pod
+                                has a toleration, are included. - Ignore: node taints
+                                are ignored. All nodes are included. \n If this value
+                                is nil, the behavior is equivalent to the Ignore policy.
+                                This is a beta-level feature default enabled by the
+                                NodeInclusionPolicyInPodTopologySpread feature flag."
+                              type: string
                             topologyKey:
                               description: TopologyKey is the key of node labels.
                                 Nodes that have a label with this key and identical
@@ -15370,11 +16253,11 @@ spec:
                                 to put balanced number of pods into each bucket. We
                                 define a domain as a particular instance of a topology.
                                 Also, we define an eligible domain as a domain whose
-                                nodes match the node selector. e.g. If TopologyKey
-                                is "kubernetes.io/hostname", each Node is a domain
-                                of that topology. And, if TopologyKey is "topology.kubernetes.io/zone",
-                                each zone is a domain of that topology. It's a required
-                                field.
+                                nodes meet the requirements of nodeAffinityPolicy
+                                and nodeTaintsPolicy. e.g. If TopologyKey is "kubernetes.io/hostname",
+                                each Node is a domain of that topology. And, if TopologyKey
+                                is "topology.kubernetes.io/zone", each zone is a domain
+                                of that topology. It's a required field.
                               type: string
                             whenUnsatisfiable:
                               description: 'WhenUnsatisfiable indicates how to deal
@@ -16314,6 +17197,28 @@ spec:
                         description: ResourceRequirements describes the compute resource
                           requirements.
                         properties:
+                          claims:
+                            description: "Claims lists the names of resources, defined
+                              in spec.resourceClaims, that are used by this container.
+                              \n This is an alpha field and requires enabling the
+                              DynamicResourceAllocation feature gate. \n This field
+                              is immutable. It can only be set for containers."
+                            items:
+                              description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                              properties:
+                                name:
+                                  description: Name must match the name of one entry
+                                    in pod.spec.resourceClaims of the Pod where this
+                                    field is used. It makes that resource available
+                                    inside a container.
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                            type: array
+                            x-kubernetes-list-map-keys:
+                            - name
+                            x-kubernetes-list-type: map
                           limits:
                             additionalProperties:
                               anyOf:
@@ -16335,7 +17240,7 @@ spec:
                               compute resources required. If Requests is omitted for
                               a container, it defaults to Limits if that is explicitly
                               specified, otherwise to an implementation-defined value.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                              Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                             type: object
                         type: object
                       tolerations:
@@ -16434,6 +17339,24 @@ spec:
                                   type: object
                               type: object
                               x-kubernetes-map-type: atomic
+                            matchLabelKeys:
+                              description: "MatchLabelKeys is a set of pod label keys
+                                to select the pods over which spreading will be calculated.
+                                The keys are used to lookup values from the incoming
+                                pod labels, those key-value labels are ANDed with
+                                labelSelector to select the group of existing pods
+                                over which spreading will be calculated for the incoming
+                                pod. The same key is forbidden to exist in both MatchLabelKeys
+                                and LabelSelector. MatchLabelKeys cannot be set when
+                                LabelSelector isn't set. Keys that don't exist in
+                                the incoming pod labels will be ignored. A null or
+                                empty list means only match against labelSelector.
+                                \n This is a beta field and requires the MatchLabelKeysInPodTopologySpread
+                                feature gate to be enabled (enabled by default)."
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
                             maxSkew:
                               description: 'MaxSkew describes the degree to which
                                 pods may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
@@ -16479,10 +17402,34 @@ spec:
                                 new pod with the same labelSelector cannot be scheduled,
                                 because computed skew will be 3(3 - 0) if new Pod
                                 is scheduled to any of the three zones, it will violate
-                                MaxSkew. \n This is an alpha field and requires enabling
-                                MinDomainsInPodTopologySpread feature gate."
+                                MaxSkew. \n This is a beta field and requires the
+                                MinDomainsInPodTopologySpread feature gate to be enabled
+                                (enabled by default)."
                               format: int32
                               type: integer
+                            nodeAffinityPolicy:
+                              description: "NodeAffinityPolicy indicates how we will
+                                treat Pod's nodeAffinity/nodeSelector when calculating
+                                pod topology spread skew. Options are: - Honor: only
+                                nodes matching nodeAffinity/nodeSelector are included
+                                in the calculations. - Ignore: nodeAffinity/nodeSelector
+                                are ignored. All nodes are included in the calculations.
+                                \n If this value is nil, the behavior is equivalent
+                                to the Honor policy. This is a beta-level feature
+                                default enabled by the NodeInclusionPolicyInPodTopologySpread
+                                feature flag."
+                              type: string
+                            nodeTaintsPolicy:
+                              description: "NodeTaintsPolicy indicates how we will
+                                treat node taints when calculating pod topology spread
+                                skew. Options are: - Honor: nodes without taints,
+                                along with tainted nodes for which the incoming pod
+                                has a toleration, are included. - Ignore: node taints
+                                are ignored. All nodes are included. \n If this value
+                                is nil, the behavior is equivalent to the Ignore policy.
+                                This is a beta-level feature default enabled by the
+                                NodeInclusionPolicyInPodTopologySpread feature flag."
+                              type: string
                             topologyKey:
                               description: TopologyKey is the key of node labels.
                                 Nodes that have a label with this key and identical
@@ -16491,11 +17438,11 @@ spec:
                                 to put balanced number of pods into each bucket. We
                                 define a domain as a particular instance of a topology.
                                 Also, we define an eligible domain as a domain whose
-                                nodes match the node selector. e.g. If TopologyKey
-                                is "kubernetes.io/hostname", each Node is a domain
-                                of that topology. And, if TopologyKey is "topology.kubernetes.io/zone",
-                                each zone is a domain of that topology. It's a required
-                                field.
+                                nodes meet the requirements of nodeAffinityPolicy
+                                and nodeTaintsPolicy. e.g. If TopologyKey is "kubernetes.io/hostname",
+                                each Node is a domain of that topology. And, if TopologyKey
+                                is "topology.kubernetes.io/zone", each zone is a domain
+                                of that topology. It's a required field.
                               type: string
                             whenUnsatisfiable:
                               description: 'WhenUnsatisfiable indicates how to deal
@@ -17453,6 +18400,28 @@ spec:
                         description: ResourceRequirements describes the compute resource
                           requirements.
                         properties:
+                          claims:
+                            description: "Claims lists the names of resources, defined
+                              in spec.resourceClaims, that are used by this container.
+                              \n This is an alpha field and requires enabling the
+                              DynamicResourceAllocation feature gate. \n This field
+                              is immutable. It can only be set for containers."
+                            items:
+                              description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                              properties:
+                                name:
+                                  description: Name must match the name of one entry
+                                    in pod.spec.resourceClaims of the Pod where this
+                                    field is used. It makes that resource available
+                                    inside a container.
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                            type: array
+                            x-kubernetes-list-map-keys:
+                            - name
+                            x-kubernetes-list-type: map
                           limits:
                             additionalProperties:
                               anyOf:
@@ -17474,7 +18443,7 @@ spec:
                               compute resources required. If Requests is omitted for
                               a container, it defaults to Limits if that is explicitly
                               specified, otherwise to an implementation-defined value.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                              Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                             type: object
                         type: object
                       tolerations:
@@ -17573,6 +18542,24 @@ spec:
                                   type: object
                               type: object
                               x-kubernetes-map-type: atomic
+                            matchLabelKeys:
+                              description: "MatchLabelKeys is a set of pod label keys
+                                to select the pods over which spreading will be calculated.
+                                The keys are used to lookup values from the incoming
+                                pod labels, those key-value labels are ANDed with
+                                labelSelector to select the group of existing pods
+                                over which spreading will be calculated for the incoming
+                                pod. The same key is forbidden to exist in both MatchLabelKeys
+                                and LabelSelector. MatchLabelKeys cannot be set when
+                                LabelSelector isn't set. Keys that don't exist in
+                                the incoming pod labels will be ignored. A null or
+                                empty list means only match against labelSelector.
+                                \n This is a beta field and requires the MatchLabelKeysInPodTopologySpread
+                                feature gate to be enabled (enabled by default)."
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
                             maxSkew:
                               description: 'MaxSkew describes the degree to which
                                 pods may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
@@ -17618,10 +18605,34 @@ spec:
                                 new pod with the same labelSelector cannot be scheduled,
                                 because computed skew will be 3(3 - 0) if new Pod
                                 is scheduled to any of the three zones, it will violate
-                                MaxSkew. \n This is an alpha field and requires enabling
-                                MinDomainsInPodTopologySpread feature gate."
+                                MaxSkew. \n This is a beta field and requires the
+                                MinDomainsInPodTopologySpread feature gate to be enabled
+                                (enabled by default)."
                               format: int32
                               type: integer
+                            nodeAffinityPolicy:
+                              description: "NodeAffinityPolicy indicates how we will
+                                treat Pod's nodeAffinity/nodeSelector when calculating
+                                pod topology spread skew. Options are: - Honor: only
+                                nodes matching nodeAffinity/nodeSelector are included
+                                in the calculations. - Ignore: nodeAffinity/nodeSelector
+                                are ignored. All nodes are included in the calculations.
+                                \n If this value is nil, the behavior is equivalent
+                                to the Honor policy. This is a beta-level feature
+                                default enabled by the NodeInclusionPolicyInPodTopologySpread
+                                feature flag."
+                              type: string
+                            nodeTaintsPolicy:
+                              description: "NodeTaintsPolicy indicates how we will
+                                treat node taints when calculating pod topology spread
+                                skew. Options are: - Honor: nodes without taints,
+                                along with tainted nodes for which the incoming pod
+                                has a toleration, are included. - Ignore: node taints
+                                are ignored. All nodes are included. \n If this value
+                                is nil, the behavior is equivalent to the Ignore policy.
+                                This is a beta-level feature default enabled by the
+                                NodeInclusionPolicyInPodTopologySpread feature flag."
+                              type: string
                             topologyKey:
                               description: TopologyKey is the key of node labels.
                                 Nodes that have a label with this key and identical
@@ -17630,11 +18641,11 @@ spec:
                                 to put balanced number of pods into each bucket. We
                                 define a domain as a particular instance of a topology.
                                 Also, we define an eligible domain as a domain whose
-                                nodes match the node selector. e.g. If TopologyKey
-                                is "kubernetes.io/hostname", each Node is a domain
-                                of that topology. And, if TopologyKey is "topology.kubernetes.io/zone",
-                                each zone is a domain of that topology. It's a required
-                                field.
+                                nodes meet the requirements of nodeAffinityPolicy
+                                and nodeTaintsPolicy. e.g. If TopologyKey is "kubernetes.io/hostname",
+                                each Node is a domain of that topology. And, if TopologyKey
+                                is "topology.kubernetes.io/zone", each zone is a domain
+                                of that topology. It's a required field.
                               type: string
                             whenUnsatisfiable:
                               description: 'WhenUnsatisfiable indicates how to deal
@@ -18545,6 +19556,28 @@ spec:
                     description: ResourceRequirements describes the compute resource
                       requirements.
                     properties:
+                      claims:
+                        description: "Claims lists the names of resources, defined
+                          in spec.resourceClaims, that are used by this container.
+                          \n This is an alpha field and requires enabling the DynamicResourceAllocation
+                          feature gate. \n This field is immutable. It can only be
+                          set for containers."
+                        items:
+                          description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                          properties:
+                            name:
+                              description: Name must match the name of one entry in
+                                pod.spec.resourceClaims of the Pod where this field
+                                is used. It makes that resource available inside a
+                                container.
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type: array
+                        x-kubernetes-list-map-keys:
+                        - name
+                        x-kubernetes-list-type: map
                       limits:
                         additionalProperties:
                           anyOf:
@@ -18565,7 +19598,8 @@ spec:
                         description: 'Requests describes the minimum amount of compute
                           resources required. If Requests is omitted for a container,
                           it defaults to Limits if that is explicitly specified, otherwise
-                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                          to an implementation-defined value. Requests cannot exceed
+                          Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
                   databaseTolerations:
@@ -18661,6 +19695,24 @@ spec:
                               type: object
                           type: object
                           x-kubernetes-map-type: atomic
+                        matchLabelKeys:
+                          description: "MatchLabelKeys is a set of pod label keys
+                            to select the pods over which spreading will be calculated.
+                            The keys are used to lookup values from the incoming pod
+                            labels, those key-value labels are ANDed with labelSelector
+                            to select the group of existing pods over which spreading
+                            will be calculated for the incoming pod. The same key
+                            is forbidden to exist in both MatchLabelKeys and LabelSelector.
+                            MatchLabelKeys cannot be set when LabelSelector isn't
+                            set. Keys that don't exist in the incoming pod labels
+                            will be ignored. A null or empty list means only match
+                            against labelSelector. \n This is a beta field and requires
+                            the MatchLabelKeysInPodTopologySpread feature gate to
+                            be enabled (enabled by default)."
+                          items:
+                            type: string
+                          type: array
+                          x-kubernetes-list-type: atomic
                         maxSkew:
                           description: 'MaxSkew describes the degree to which pods
                             may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
@@ -18703,11 +19755,33 @@ spec:
                             as 0. In this situation, new pod with the same labelSelector
                             cannot be scheduled, because computed skew will be 3(3
                             - 0) if new Pod is scheduled to any of the three zones,
-                            it will violate MaxSkew. \n This is an alpha field and
-                            requires enabling MinDomainsInPodTopologySpread feature
-                            gate."
+                            it will violate MaxSkew. \n This is a beta field and requires
+                            the MinDomainsInPodTopologySpread feature gate to be enabled
+                            (enabled by default)."
                           format: int32
                           type: integer
+                        nodeAffinityPolicy:
+                          description: "NodeAffinityPolicy indicates how we will treat
+                            Pod's nodeAffinity/nodeSelector when calculating pod topology
+                            spread skew. Options are: - Honor: only nodes matching
+                            nodeAffinity/nodeSelector are included in the calculations.
+                            - Ignore: nodeAffinity/nodeSelector are ignored. All nodes
+                            are included in the calculations. \n If this value is
+                            nil, the behavior is equivalent to the Honor policy. This
+                            is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread
+                            feature flag."
+                          type: string
+                        nodeTaintsPolicy:
+                          description: "NodeTaintsPolicy indicates how we will treat
+                            node taints when calculating pod topology spread skew.
+                            Options are: - Honor: nodes without taints, along with
+                            tainted nodes for which the incoming pod has a toleration,
+                            are included. - Ignore: node taints are ignored. All nodes
+                            are included. \n If this value is nil, the behavior is
+                            equivalent to the Ignore policy. This is a beta-level
+                            feature default enabled by the NodeInclusionPolicyInPodTopologySpread
+                            feature flag."
+                          type: string
                         topologyKey:
                           description: TopologyKey is the key of node labels. Nodes
                             that have a label with this key and identical values are
@@ -18715,11 +19789,11 @@ spec:
                             <key, value> as a "bucket", and try to put balanced number
                             of pods into each bucket. We define a domain as a particular
                             instance of a topology. Also, we define an eligible domain
-                            as a domain whose nodes match the node selector. e.g.
-                            If TopologyKey is "kubernetes.io/hostname", each Node
-                            is a domain of that topology. And, if TopologyKey is "topology.kubernetes.io/zone",
-                            each zone is a domain of that topology. It's a required
-                            field.
+                            as a domain whose nodes meet the requirements of nodeAffinityPolicy
+                            and nodeTaintsPolicy. e.g. If TopologyKey is "kubernetes.io/hostname",
+                            each Node is a domain of that topology. And, if TopologyKey
+                            is "topology.kubernetes.io/zone", each zone is a domain
+                            of that topology. It's a required field.
                           type: string
                         whenUnsatisfiable:
                           description: 'WhenUnsatisfiable indicates how to deal with
@@ -19671,6 +20745,28 @@ spec:
                         description: ResourceRequirements describes the compute resource
                           requirements.
                         properties:
+                          claims:
+                            description: "Claims lists the names of resources, defined
+                              in spec.resourceClaims, that are used by this container.
+                              \n This is an alpha field and requires enabling the
+                              DynamicResourceAllocation feature gate. \n This field
+                              is immutable. It can only be set for containers."
+                            items:
+                              description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                              properties:
+                                name:
+                                  description: Name must match the name of one entry
+                                    in pod.spec.resourceClaims of the Pod where this
+                                    field is used. It makes that resource available
+                                    inside a container.
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                            type: array
+                            x-kubernetes-list-map-keys:
+                            - name
+                            x-kubernetes-list-type: map
                           limits:
                             additionalProperties:
                               anyOf:
@@ -19692,7 +20788,7 @@ spec:
                               compute resources required. If Requests is omitted for
                               a container, it defaults to Limits if that is explicitly
                               specified, otherwise to an implementation-defined value.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                              Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                             type: object
                         type: object
                       tolerations:
@@ -19791,6 +20887,24 @@ spec:
                                   type: object
                               type: object
                               x-kubernetes-map-type: atomic
+                            matchLabelKeys:
+                              description: "MatchLabelKeys is a set of pod label keys
+                                to select the pods over which spreading will be calculated.
+                                The keys are used to lookup values from the incoming
+                                pod labels, those key-value labels are ANDed with
+                                labelSelector to select the group of existing pods
+                                over which spreading will be calculated for the incoming
+                                pod. The same key is forbidden to exist in both MatchLabelKeys
+                                and LabelSelector. MatchLabelKeys cannot be set when
+                                LabelSelector isn't set. Keys that don't exist in
+                                the incoming pod labels will be ignored. A null or
+                                empty list means only match against labelSelector.
+                                \n This is a beta field and requires the MatchLabelKeysInPodTopologySpread
+                                feature gate to be enabled (enabled by default)."
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
                             maxSkew:
                               description: 'MaxSkew describes the degree to which
                                 pods may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
@@ -19836,10 +20950,34 @@ spec:
                                 new pod with the same labelSelector cannot be scheduled,
                                 because computed skew will be 3(3 - 0) if new Pod
                                 is scheduled to any of the three zones, it will violate
-                                MaxSkew. \n This is an alpha field and requires enabling
-                                MinDomainsInPodTopologySpread feature gate."
+                                MaxSkew. \n This is a beta field and requires the
+                                MinDomainsInPodTopologySpread feature gate to be enabled
+                                (enabled by default)."
                               format: int32
                               type: integer
+                            nodeAffinityPolicy:
+                              description: "NodeAffinityPolicy indicates how we will
+                                treat Pod's nodeAffinity/nodeSelector when calculating
+                                pod topology spread skew. Options are: - Honor: only
+                                nodes matching nodeAffinity/nodeSelector are included
+                                in the calculations. - Ignore: nodeAffinity/nodeSelector
+                                are ignored. All nodes are included in the calculations.
+                                \n If this value is nil, the behavior is equivalent
+                                to the Honor policy. This is a beta-level feature
+                                default enabled by the NodeInclusionPolicyInPodTopologySpread
+                                feature flag."
+                              type: string
+                            nodeTaintsPolicy:
+                              description: "NodeTaintsPolicy indicates how we will
+                                treat node taints when calculating pod topology spread
+                                skew. Options are: - Honor: nodes without taints,
+                                along with tainted nodes for which the incoming pod
+                                has a toleration, are included. - Ignore: node taints
+                                are ignored. All nodes are included. \n If this value
+                                is nil, the behavior is equivalent to the Ignore policy.
+                                This is a beta-level feature default enabled by the
+                                NodeInclusionPolicyInPodTopologySpread feature flag."
+                              type: string
                             topologyKey:
                               description: TopologyKey is the key of node labels.
                                 Nodes that have a label with this key and identical
@@ -19848,11 +20986,11 @@ spec:
                                 to put balanced number of pods into each bucket. We
                                 define a domain as a particular instance of a topology.
                                 Also, we define an eligible domain as a domain whose
-                                nodes match the node selector. e.g. If TopologyKey
-                                is "kubernetes.io/hostname", each Node is a domain
-                                of that topology. And, if TopologyKey is "topology.kubernetes.io/zone",
-                                each zone is a domain of that topology. It's a required
-                                field.
+                                nodes meet the requirements of nodeAffinityPolicy
+                                and nodeTaintsPolicy. e.g. If TopologyKey is "kubernetes.io/hostname",
+                                each Node is a domain of that topology. And, if TopologyKey
+                                is "topology.kubernetes.io/zone", each zone is a domain
+                                of that topology. It's a required field.
                               type: string
                             whenUnsatisfiable:
                               description: 'WhenUnsatisfiable indicates how to deal

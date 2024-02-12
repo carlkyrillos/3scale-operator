@@ -17,6 +17,7 @@ const (
 
 // SecretToApimanagerEventMapper is an EventHandler that maps secret object to apimanager CR's
 type SecretToApimanagerEventMapper struct {
+	Context   context.Context
 	K8sClient client.Client
 	Logger    logr.Logger
 	Namespace string
@@ -26,7 +27,7 @@ func apimanagerSecretLabelKey(uid string) string {
 	return fmt.Sprintf("%s%s", APImanagerSecretLabelPrefix, uid)
 }
 
-func (s *SecretToApimanagerEventMapper) Map(obj client.Object) []reconcile.Request {
+func (s *SecretToApimanagerEventMapper) Map(ctx context.Context, obj client.Object) []reconcile.Request {
 
 	apimanagerList := &appsv1alpha1.APIManagerList{}
 

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"github.com/3scale/3scale-operator/pkg/reconcilers"
 	"reflect"
 	"testing"
@@ -69,8 +70,7 @@ func TestAPIManagerRoutesEventMapperMap(t *testing.T) {
 	}
 
 	// Create a fake client to mock API calls.
-	//cl := fake.NewFakeClient(objs...)
-	cl := fake.NewFakeClientWithScheme(s, objs...)
+	cl := fake.NewClientBuilder().WithScheme(s).WithRuntimeObjects(objs...).Build()
 
 	apimanagerRoutesEventMapper := APIManagerRoutesEventMapper{
 		K8sClient: cl,
@@ -177,7 +177,7 @@ func TestAPIManagerRoutesEventMapperMap(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.testName, func(subT *testing.T) {
-			res := apimanagerRoutesEventMapper.Map(tc.input)
+			res := apimanagerRoutesEventMapper.Map(context.TODO(), tc.input)
 			if !reflect.DeepEqual(res, tc.expected) {
 				subT.Errorf("Unexpected result: %v. Expected: %v", res, tc.expected)
 			}

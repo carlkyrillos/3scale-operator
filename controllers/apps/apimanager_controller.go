@@ -19,10 +19,10 @@ package controllers
 import (
 	"context"
 	"fmt"
-	k8sappsv1 "k8s.io/api/apps/v1"
 
 	routev1 "github.com/openshift/api/route/v1"
 
+	k8sappsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	apimachinerymetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,13 +34,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	appsv1alpha1 "github.com/3scale/3scale-operator/apis/apps/v1alpha1"
 	"github.com/3scale/3scale-operator/pkg/3scale/amp/operator"
 	"github.com/3scale/3scale-operator/pkg/3scale/amp/product"
 	"github.com/3scale/3scale-operator/pkg/handlers"
-
 	"github.com/3scale/3scale-operator/pkg/helper"
 	"github.com/3scale/3scale-operator/pkg/reconcilers"
 	"github.com/3scale/3scale-operator/version"
@@ -132,12 +130,14 @@ func (r *APIManagerReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 func (r *APIManagerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	secretToApimanagerEventMapper := &SecretToApimanagerEventMapper{
+		Context:   r.Context(),
 		K8sClient: r.Client(),
 		Logger:    r.Logger().WithName("secretToApimanagerEventMapper"),
 		Namespace: r.WatchedNamespace,
 	}
 
 	handlers := &handlers.APIManagerRoutesEventMapper{
+		Context:   r.Context(),
 		K8sClient: r.Client(),
 		Logger:    r.Logger().WithName("APIManagerRoutesHandler"),
 	}
@@ -150,12 +150,12 @@ func (r *APIManagerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1alpha1.APIManager{}).
 		Watches(
-			&source.Kind{Type: &v1.Secret{}},
+			&v1.Secret{},
 			handler.EnqueueRequestsFromMapFunc(secretToApimanagerEventMapper.Map),
 			builder.WithPredicates(labelSelectorPredicate),
 		).
 		Owns(&k8sappsv1.Deployment{}).
-		Watches(&source.Kind{Type: &routev1.Route{}}, handler.EnqueueRequestsFromMapFunc(handlers.Map)).
+		Watches(&routev1.Route{}, handler.EnqueueRequestsFromMapFunc(handlers.Map)).
 		Complete(r)
 }
 

@@ -39,8 +39,11 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	controllerruntimemetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	appsv1alpha1 "github.com/3scale/3scale-operator/apis/apps/v1alpha1"
 	capabilitiesv1alpha1 "github.com/3scale/3scale-operator/apis/capabilities/v1alpha1"
@@ -70,13 +73,13 @@ func init() {
 	utilruntime.Must(appsv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(capabilitiesv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(capabilitiesv1beta1.AddToScheme(scheme))
-	utilruntime.Must(routev1.AddToScheme(scheme))
-	utilruntime.Must(consolev1.AddToScheme(scheme))
-	utilruntime.Must(imagev1.AddToScheme(scheme))
-	utilruntime.Must(appsv1.AddToScheme(scheme))
+	utilruntime.Must(routev1.Install(scheme))
+	utilruntime.Must(consolev1.Install(scheme))
+	utilruntime.Must(imagev1.Install(scheme))
+	utilruntime.Must(appsv1.Install(scheme))
 	utilruntime.Must(monitoringv1.AddToScheme(scheme))
 	utilruntime.Must(grafanav1alpha1.AddToScheme(scheme))
-	utilruntime.Must(configv1.AddToScheme(scheme))
+	utilruntime.Must(configv1.Install(scheme))
 
 	// +kubebuilder:scaffold:scheme
 }
@@ -108,12 +111,16 @@ func main() {
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Namespace:          namespace,
-		Scheme:             scheme,
-		MetricsBindAddress: metricsAddr,
-		Port:               9443,
-		LeaderElection:     enableLeaderElection,
-		LeaderElectionID:   "82355b9c.3scale.net",
+		Cache: cache.Options{
+			DefaultNamespaces: map[string]cache.Config{
+				namespace: {},
+			},
+		},
+		Scheme:           scheme,
+		Metrics:          metricsserver.Options{BindAddress: metricsAddr},
+		WebhookServer:    webhook.NewServer(webhook.Options{Port: 9443}),
+		LeaderElection:   enableLeaderElection,
+		LeaderElectionID: "82355b9c.3scale.net",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
