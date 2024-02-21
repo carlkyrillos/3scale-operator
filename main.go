@@ -110,21 +110,40 @@ func main() {
 		os.Exit(1)
 	}
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Cache: cache.Options{
-			DefaultNamespaces: map[string]cache.Config{
-				namespace: {},
+	var mgr ctrl.Manager
+
+	// If a watch namespace is detected (i.e. operator is namespace scoped), then pass the NS to cache.Options.DefaultNamespaces
+	// If no watch namespace is detected (i.e. operator is cluster scoped), then don't specify cache.Options.DefaultNamespaces
+	if namespace != "" {
+		mgr, err = ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+			Cache: cache.Options{
+				DefaultNamespaces: map[string]cache.Config{
+					namespace: {},
+				},
 			},
-		},
-		Scheme:           scheme,
-		Metrics:          metricsserver.Options{BindAddress: metricsAddr},
-		WebhookServer:    webhook.NewServer(webhook.Options{Port: 9443}),
-		LeaderElection:   enableLeaderElection,
-		LeaderElectionID: "82355b9c.3scale.net",
-	})
-	if err != nil {
-		setupLog.Error(err, "unable to start manager")
-		os.Exit(1)
+			Scheme:           scheme,
+			Metrics:          metricsserver.Options{BindAddress: metricsAddr},
+			WebhookServer:    webhook.NewServer(webhook.Options{Port: 9443}),
+			LeaderElection:   enableLeaderElection,
+			LeaderElectionID: "82355b9c.3scale.net",
+		})
+		if err != nil {
+			setupLog.Error(err, "unable to start namespace scoped manager")
+			os.Exit(1)
+		}
+	} else {
+		mgr, err = ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+			Scheme:           scheme,
+			Metrics:          metricsserver.Options{BindAddress: metricsAddr},
+			WebhookServer:    webhook.NewServer(webhook.Options{Port: 9443}),
+			LeaderElection:   enableLeaderElection,
+			LeaderElectionID: "82355b9c.3scale.net",
+		})
+		if err != nil {
+			setupLog.Error(err, "unable to start cluster scoped manager")
+			os.Exit(1)
+		}
+
 	}
 
 	secretLabelSelector, err := apimachinerymetav1.ParseToLabelSelector("apimanager.apps.3scale.net/watched-by=apimanager")
