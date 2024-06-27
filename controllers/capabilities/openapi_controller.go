@@ -20,12 +20,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/url"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"net/url"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -186,6 +185,12 @@ func (r *OpenAPIReconciler) reconcileSpec(openapiCR *capabilitiesv1beta1.OpenAPI
 	err = r.validateOIDCSettingsInCR(openapiCR, openapiObj)
 	if err != nil {
 		statusReconciler := NewOpenAPIStatusReconciler(r.BaseReconciler, openapiCR, "", err, false)
+		return statusReconciler, ctrl.Result{}, err
+	}
+
+	err = r.validateOASExtensions(openapiObj)
+	if err != nil {
+		statusReconciler := NewOpenAPIStatusReconciler(r.BaseReconciler, openapiCR, providerAccount.AdminURLStr, err, false)
 		return statusReconciler, ctrl.Result{}, err
 	}
 
@@ -356,6 +361,55 @@ func (r *OpenAPIReconciler) validateOpenAPIAs3scaleProduct(openapiCR *capabiliti
 	}
 
 	return nil
+}
+
+func (r *OpenAPIReconciler) validateOASExtensions(openapiObj *openapi3.T) error {
+	extensionErrors := field.ErrorList{}
+	productExtensionPath := field.NewPath("x-3scale-product")
+	metricsExtensionPath := productExtensionPath.Child("metrics")
+	policiesExtensionPath := productExtensionPath.Child("policies")
+
+	// Validate OAS root product extension
+	rootProductExtension, err := helper.NewOasRootProductExtension(openapiObj)
+	if err != nil {
+		return err
+	}
+
+	// Validate metrics
+	if rootProductExtension != nil && rootProductExtension.Metrics != nil {
+		// Look through policies in extension and create PolicyConfig objects
+		for metricKey, metric := range rootProductExtension.Metrics {
+			if metric.Name == "" {
+				extensionErrors = append(extensionErrors, field.Required(metricsExtensionPath, fmt.Sprintf("metric %s is missing a friendlyName", metricKey)))
+			}
+			if metric.Unit == "" {
+				extensionErrors = append(extensionErrors, field.Required(metricsExtensionPath, fmt.Sprintf("metric %s is missing a unit", metricKey)))
+			}
+		}
+
+	}
+
+	// Validate policies
+	if rootProductExtension != nil && rootProductExtension.Policies != nil {
+		// Look through policies in extension and create PolicyConfig objects
+		for _, policy := range rootProductExtension.Policies {
+			if policy.Name == "" {
+				extensionErrors = append(extensionErrors, field.Required(policiesExtensionPath, "one or more policies are missing a name"))
+			}
+			if policy.Version == "" {
+				extensionErrors = append(extensionErrors, field.Required(policiesExtensionPath, fmt.Sprintf("policy %s is missing a version", policy.Name)))
+			}
+		}
+	}
+
+	if len(extensionErrors) == 0 {
+		return nil
+	}
+
+	return &helper.SpecFieldError{
+		ErrorType:      helper.InvalidError,
+		FieldErrorList: extensionErrors,
+	}
 }
 
 func (r *OpenAPIReconciler) readOpenAPIFromURL(resource *capabilitiesv1beta1.OpenAPI) (*openapi3.T, error) {
