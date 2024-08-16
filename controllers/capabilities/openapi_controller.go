@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	v3 "github.com/pb33f/libopenapi/datamodel/high/v3"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,7 +40,11 @@ import (
 	"github.com/3scale/3scale-operator/pkg/helper"
 	"github.com/3scale/3scale-operator/pkg/reconcilers"
 	"github.com/3scale/3scale-operator/version"
+
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/pb33f/libopenapi"
+	libopenapivalidator "github.com/pb33f/libopenapi-validator"
+	"github.com/pb33f/libopenapi/datamodel"
 )
 
 const (
@@ -293,7 +298,7 @@ func (r *OpenAPIReconciler) checkProductSynced(resource *capabilitiesv1beta1.Ope
 	return product.Status.Conditions.IsTrueFor(capabilitiesv1beta1.ProductSyncedConditionType), nil
 }
 
-func (r *OpenAPIReconciler) readOpenAPI(resource *capabilitiesv1beta1.OpenAPI) (*openapi3.T, error) {
+func (r *OpenAPIReconciler) readOpenAPI(resource *capabilitiesv1beta1.OpenAPI) (*libopenapi.DocumentModel[v3.Document], error) {
 	// OpenAPIRef is oneOf by CRD openapiV3 validation
 	if resource.Spec.OpenAPIRef.SecretRef != nil {
 		// Label the OAS source secret and OpenAPI so the secret can be watched by the openapi_controller
@@ -358,7 +363,7 @@ func (r *OpenAPIReconciler) labelOpenAPISecretAndCR(openAPICR *capabilitiesv1bet
 	return nil
 }
 
-func (r *OpenAPIReconciler) readOpenAPISecret(resource *capabilitiesv1beta1.OpenAPI) (*openapi3.T, error) {
+func (r *OpenAPIReconciler) readOpenAPISecret(resource *capabilitiesv1beta1.OpenAPI) (*libopenapi.DocumentModel[v3.Document], error) {
 	fieldErrors := field.ErrorList{}
 	specFldPath := field.NewPath("spec")
 	openapiRefFldPath := specFldPath.Child("openapiRef")
@@ -397,28 +402,47 @@ func (r *OpenAPIReconciler) readOpenAPISecret(resource *capabilitiesv1beta1.Open
 		return nil
 	}(openapiSecretObj)
 
-	openapiObj, err := openapi3.NewLoader().LoadFromData(dataByteArray)
+	// Create a libopenapi Document from the Secret data
+	document, err := libopenapi.NewDocument(dataByteArray)
 	if err != nil {
-		fieldErrors = append(fieldErrors, field.Invalid(secretRefFldPath, resource.Spec.OpenAPIRef.SecretRef, err.Error()))
+		return nil, err
+	}
+
+	// Create a Validator for the document
+	docValidator, validatorErrs := libopenapivalidator.NewValidator(document)
+	if validatorErrs != nil {
+		for _, e := range validatorErrs {
+			fieldErrors = append(fieldErrors, field.Invalid(secretRefFldPath, resource.Spec.OpenAPIRef.SecretRef, e.Error()))
+		}
+	}
+
+	// Validate the document
+	valid, validationErrs := docValidator.ValidateDocument()
+	if !valid {
+		for _, e := range validationErrs {
+			fieldErrors = append(fieldErrors, field.Invalid(secretRefFldPath, resource.Spec.OpenAPIRef.SecretRef, e.Error()))
+		}
 		return nil, &helper.SpecFieldError{
 			ErrorType:      helper.InvalidError,
 			FieldErrorList: fieldErrors,
 		}
 	}
 
-	err = openapiObj.Validate(r.Context())
-	if err != nil {
-		fieldErrors = append(fieldErrors, field.Invalid(secretRefFldPath, resource.Spec.OpenAPIRef.SecretRef, err.Error()))
+	v3Model, errs := document.BuildV3Model()
+	if len(errs) > 0 {
+		for _, e := range errs {
+			fieldErrors = append(fieldErrors, field.Invalid(secretRefFldPath, resource.Spec.OpenAPIRef.SecretRef, e.Error()))
+		}
 		return nil, &helper.SpecFieldError{
 			ErrorType:      helper.InvalidError,
 			FieldErrorList: fieldErrors,
 		}
 	}
 
-	return openapiObj, nil
+	return v3Model, nil
 }
 
-func (r *OpenAPIReconciler) validateOpenAPIAs3scaleProduct(openapiCR *capabilitiesv1beta1.OpenAPI, openapiObj *openapi3.T) error {
+func (r *OpenAPIReconciler) validateOpenAPIAs3scaleProduct(openapiCR *capabilitiesv1beta1.OpenAPI, openapiObj *libopenapi.DocumentModel[v3.Document]) error {
 	fieldErrors := field.ErrorList{}
 	specFldPath := field.NewPath("spec")
 	openapiRefFldPath := specFldPath.Child("openapiRef")
@@ -503,7 +527,7 @@ func (r *OpenAPIReconciler) validateOASExtensions(openapiObj *openapi3.T) error 
 	}
 }
 
-func (r *OpenAPIReconciler) readOpenAPIFromURL(resource *capabilitiesv1beta1.OpenAPI) (*openapi3.T, error) {
+func (r *OpenAPIReconciler) readOpenAPIFromURL(resource *capabilitiesv1beta1.OpenAPI) (*libopenapi.DocumentModel[v3.Document], error) {
 	fieldErrors := field.ErrorList{}
 	specFldPath := field.NewPath("spec")
 	openapiRefFldPath := specFldPath.Child("openapiRef")
@@ -522,25 +546,47 @@ func (r *OpenAPIReconciler) readOpenAPIFromURL(resource *capabilitiesv1beta1.Ope
 	// The openapi3 library will otherwise cache the previous version of the OAS source by default
 	openAPIURL.RawQuery = fmt.Sprintf("t=%d", time.Now().Unix())
 
-	openapiObj, err := openapi3.NewLoader().LoadFromURI(openAPIURL)
+	// TODO: I think it would be better to query the json ourselves and then pass to libopenapi.NewDocument() like it's a secret ref
+	// Create a libopenapi Document from the URL
+	var dataByteArray []byte
+	config := datamodel.DocumentConfiguration{BaseURL: openAPIURL}
+	document, err := libopenapi.NewDocumentWithConfiguration(dataByteArray, &config)
 	if err != nil {
-		fieldErrors = append(fieldErrors, field.Invalid(urlRefFldPath, resource.Spec.OpenAPIRef.URL, err.Error()))
+		return nil, err
+	}
+
+	// Create a Validator for the document
+	docValidator, validatorErrs := libopenapivalidator.NewValidator(document)
+	if validatorErrs != nil {
+		for _, e := range validatorErrs {
+			fieldErrors = append(fieldErrors, field.Invalid(urlRefFldPath, resource.Spec.OpenAPIRef.URL, e.Error()))
+		}
+	}
+
+	// Validate the document
+	valid, validationErrs := docValidator.ValidateDocument()
+	if !valid {
+		for _, e := range validationErrs {
+			fieldErrors = append(fieldErrors, field.Invalid(urlRefFldPath, resource.Spec.OpenAPIRef.URL, e.Error()))
+		}
 		return nil, &helper.SpecFieldError{
 			ErrorType:      helper.InvalidError,
 			FieldErrorList: fieldErrors,
 		}
 	}
 
-	err = openapiObj.Validate(r.Context())
-	if err != nil {
-		fieldErrors = append(fieldErrors, field.Invalid(urlRefFldPath, resource.Spec.OpenAPIRef.URL, err.Error()))
+	v3Model, errs := document.BuildV3Model()
+	if len(errs) > 0 {
+		for _, e := range errs {
+			fieldErrors = append(fieldErrors, field.Invalid(urlRefFldPath, resource.Spec.OpenAPIRef.URL, e.Error()))
+		}
 		return nil, &helper.SpecFieldError{
 			ErrorType:      helper.InvalidError,
 			FieldErrorList: fieldErrors,
 		}
 	}
 
-	return openapiObj, nil
+	return v3Model, nil
 }
 
 func (r *OpenAPIReconciler) validateOIDCSettingsInCR(openapiCR *capabilitiesv1beta1.OpenAPI, openapiObj *openapi3.T) error {
